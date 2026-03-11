@@ -4,7 +4,7 @@ export type SerialStatus = "unused" | "used" | "invalid";
 
 export type AuthResult = "success" | "invalid" | "used" | "error";
 
-export type LineSendStatus = "mock_sent" | "skipped" | "failed";
+export type LineSendStatus = "mock_sent" | "sent" | "skipped" | "failed";
 
 export type UserEntity = {
   id: string;
@@ -35,5 +35,7 @@ export type AuthLogEntity = {
   result: AuthResult;
   message: string;
   lineSendStatus: LineSendStatus;
+  lineErrorCode?: string | null;
+  lineRequestId?: string | null;
   createdAt: Date;
 };

@@ -106,7 +106,9 @@ export class VerifySerialUseCase {
         serialCode,
         result: "error",
         message: `認証は完了しましたが通知送信に失敗しました: ${lineResult.message}`,
-        lineSendStatus: "failed"
+        lineSendStatus: "failed",
+        lineErrorCode: lineResult.lineErrorCode,
+        lineRequestId: lineResult.lineRequestId
       });
 
       return { logId };
@@ -117,7 +119,8 @@ export class VerifySerialUseCase {
       serialCode,
       result: "success",
       message: "認証が完了しました。診断結果をご確認ください",
-      lineSendStatus: lineResult.status
+      lineSendStatus: lineResult.status,
+      lineRequestId: lineResult.lineRequestId
     });
 
     return { logId };

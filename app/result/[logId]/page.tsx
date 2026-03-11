@@ -61,6 +61,8 @@ export default async function ResultPage({ params }: PageProps) {
           <p className="subtle">LINE User ID: {log.userId || "-"}</p>
           <p className="subtle">シリアルID: {log.serialCode || "-"}</p>
           <p className="subtle">送信ステータス: {log.lineSendStatus}</p>
+          {log.lineErrorCode && <p className="subtle">LINEエラーコード: {log.lineErrorCode}</p>}
+          {log.lineRequestId && <p className="subtle">LINE Request ID: {log.lineRequestId}</p>}
         </div>
 
         {canShowImage && (

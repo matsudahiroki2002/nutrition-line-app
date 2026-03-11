@@ -12,6 +12,8 @@ type AuthLogDoc = {
   result: AuthResult;
   message: string;
   lineSendStatus: LineSendStatus;
+  lineErrorCode?: string | null;
+  lineRequestId?: string | null;
   createdAt: Timestamp;
 };
 
@@ -23,6 +25,8 @@ function toEntity(id: string, doc: AuthLogDoc): AuthLogEntity {
     result: doc.result,
     message: doc.message,
     lineSendStatus: doc.lineSendStatus,
+    lineErrorCode: doc.lineErrorCode ?? null,
+    lineRequestId: doc.lineRequestId ?? null,
     createdAt: doc.createdAt.toDate()
   };
 }
@@ -36,6 +40,8 @@ export class AuthLogRepository {
     result: AuthResult;
     message: string;
     lineSendStatus: LineSendStatus;
+    lineErrorCode?: string;
+    lineRequestId?: string;
   }): Promise<string> {
     const ref = await this.db.collection(COLLECTION_NAME).add({
       userId: input.userId,
@@ -43,6 +49,8 @@ export class AuthLogRepository {
       result: input.result,
       message: input.message,
       lineSendStatus: input.lineSendStatus,
+      lineErrorCode: input.lineErrorCode ?? null,
+      lineRequestId: input.lineRequestId ?? null,
       createdAt: FieldValue.serverTimestamp()
     });
 
