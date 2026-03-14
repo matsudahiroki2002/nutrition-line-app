@@ -7,8 +7,8 @@ export type SendResultBundleInput = {
 
 export type LineSendResult = {
   ok: boolean;
-  provider: "mock" | "line";
-  status: "mock_sent" | "sent" | "failed";
+  provider: "line";
+  status: "sent" | "failed";
   message: string;
   lineErrorCode?: string;
   lineRequestId?: string;

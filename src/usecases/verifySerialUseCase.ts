@@ -49,7 +49,6 @@ export class VerifySerialUseCase {
     await this.userRepository.upsertActiveUser({
       userId,
       lineUserId: userId,
-      lineAccountKey: env.LINE_ACCOUNT_KEY,
       displayName: null
     });
 

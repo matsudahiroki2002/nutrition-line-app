@@ -1,14 +1,12 @@
-import { publicEnv, type LineIdentityMode } from "@/src/lib/publicEnv";
+import { publicEnv } from "@/src/lib/publicEnv";
 
 export type ResolveLineIdentityResult = {
   lineUserId: string | null;
-  requiresManualInput: boolean;
   message?: string;
 };
 
 export interface LineIdentityService {
-  mode: LineIdentityMode;
-  resolveLineUserId(currentInput?: string): Promise<ResolveLineIdentityResult>;
+  resolveLineUserId(): Promise<ResolveLineIdentityResult>;
 }
 
 type LiffProfile = {
@@ -77,30 +75,14 @@ function loadLiffSdk(): Promise<void> {
   return liffLoadPromise;
 }
 
-class ManualLineIdentityService implements LineIdentityService {
-  mode: LineIdentityMode = "manual";
-
-  async resolveLineUserId(currentInput?: string): Promise<ResolveLineIdentityResult> {
-    const normalized = currentInput?.trim() || null;
-
-    return {
-      lineUserId: normalized,
-      requiresManualInput: true
-    };
-  }
-}
-
 class LiffLineIdentityService implements LineIdentityService {
-  mode: LineIdentityMode = "liff";
-
   constructor(private readonly liffId: string) {}
 
   async resolveLineUserId(): Promise<ResolveLineIdentityResult> {
     if (!this.liffId) {
       return {
         lineUserId: null,
-        requiresManualInput: true,
-        message: "LIFF IDが未設定のため手入力モードにフォールバックしました。"
+        message: "LIFF IDが未設定です。環境変数 NEXT_PUBLIC_LIFF_ID を設定してください。"
       };
     }
 
@@ -117,7 +99,6 @@ class LiffLineIdentityService implements LineIdentityService {
         window.liff.login({ redirectUri: window.location.href });
         return {
           lineUserId: null,
-          requiresManualInput: false,
           message: "LINEログインへ遷移しています。"
         };
       }
@@ -126,23 +107,17 @@ class LiffLineIdentityService implements LineIdentityService {
 
       return {
         lineUserId: profile.userId,
-        requiresManualInput: false,
         message: "LIFFからLINEユーザー情報を取得しました。"
       };
     } catch (_error) {
       return {
         lineUserId: null,
-        requiresManualInput: true,
-        message: "LIFF連携に失敗したため手入力モードに切り替えました。"
+        message: "LIFF連携に失敗しました。LINEアプリ内でページを開き直してください。"
       };
     }
   }
 }
 
 export function createLineIdentityService(): LineIdentityService {
-  if (publicEnv.NEXT_PUBLIC_LINE_IDENTITY_MODE === "liff") {
-    return new LiffLineIdentityService(publicEnv.NEXT_PUBLIC_LIFF_ID);
-  }
-
-  return new ManualLineIdentityService();
+  return new LiffLineIdentityService(publicEnv.NEXT_PUBLIC_LIFF_ID);
 }

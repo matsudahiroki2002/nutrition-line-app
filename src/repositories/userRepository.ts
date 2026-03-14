@@ -8,7 +8,6 @@ const COLLECTION_NAME = "users";
 
 type UserDoc = {
   lineUserId: string;
-  lineAccountKey: string;
   displayName: string | null;
   status: UserStatus;
   createdAt: Timestamp;
@@ -19,7 +18,6 @@ function toUserEntity(id: string, doc: UserDoc): UserEntity {
   return {
     id,
     lineUserId: doc.lineUserId,
-    lineAccountKey: doc.lineAccountKey,
     displayName: doc.displayName,
     status: doc.status,
     createdAt: doc.createdAt.toDate(),
@@ -33,7 +31,6 @@ export class UserRepository {
   async upsertActiveUser(input: {
     userId: string;
     lineUserId: string;
-    lineAccountKey: string;
     displayName?: string | null;
   }): Promise<void> {
     const ref = this.db.collection(COLLECTION_NAME).doc(input.userId);
@@ -42,7 +39,6 @@ export class UserRepository {
       const snapshot = await transaction.get(ref);
       const common = {
         lineUserId: input.lineUserId,
-        lineAccountKey: input.lineAccountKey,
         displayName: input.displayName ?? null,
         status: "active",
         updatedAt: FieldValue.serverTimestamp()

@@ -4,12 +4,11 @@ export type SerialStatus = "unused" | "used" | "invalid";
 
 export type AuthResult = "success" | "invalid" | "used" | "error";
 
-export type LineSendStatus = "mock_sent" | "sent" | "skipped" | "failed";
+export type LineSendStatus = "sent" | "skipped" | "failed";
 
 export type UserEntity = {
   id: string;
   lineUserId: string;
-  lineAccountKey: string;
   displayName: string | null;
   status: UserStatus;
   createdAt: Date;

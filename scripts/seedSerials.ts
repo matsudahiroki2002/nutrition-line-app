@@ -15,7 +15,6 @@ type SeedSerialRow = {
 type SeedUserRow = {
   userId: string;
   lineUserId: string;
-  lineAccountKey?: string;
   displayName: string | null;
   serials: SeedSerialRow[];
 };
@@ -36,7 +35,6 @@ async function main() {
     await userRepository.upsertActiveUser({
       userId: user.userId,
       lineUserId: user.lineUserId,
-      lineAccountKey: user.lineAccountKey ?? "temp",
       displayName: user.displayName
     });
 

@@ -16,8 +16,7 @@ export default function SerialPage() {
 
   const [serialCode, setSerialCode] = useState("");
   const [lineUserId, setLineUserId] = useState("");
-  const [requiresManualInput, setRequiresManualInput] = useState(identityService.mode === "manual");
-  const [identityLoading, setIdentityLoading] = useState(identityService.mode === "liff");
+  const [identityLoading, setIdentityLoading] = useState(true);
   const [identityMessage, setIdentityMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,19 +25,12 @@ export default function SerialPage() {
     let active = true;
 
     async function resolveIdentity() {
-      if (identityService.mode === "manual") {
-        setIdentityLoading(false);
-        setRequiresManualInput(true);
-        return;
-      }
-
       const result = await identityService.resolveLineUserId();
 
       if (!active) {
         return;
       }
 
-      setRequiresManualInput(result.requiresManualInput);
       setIdentityLoading(false);
       setIdentityMessage(result.message ?? null);
 
@@ -64,11 +56,7 @@ export default function SerialPage() {
     }
 
     if (!lineUserId.trim()) {
-      setErrorMessage(
-        requiresManualInput
-          ? "LINE User IDを入力してください。"
-          : "LINEユーザー情報を取得中です。少し待ってから再試行してください。"
-      );
+      setErrorMessage("LINEユーザー情報を取得できていません。LINEアプリ内で開き直して再試行してください。");
       return;
     }
 
@@ -121,23 +109,10 @@ export default function SerialPage() {
             />
           </div>
 
-          {requiresManualInput ? (
-            <div className="stack" style={{ gap: 8 }}>
-              <label htmlFor="lineUserId">LINE User ID</label>
-              <input
-                id="lineUserId"
-                className="input"
-                placeholder="例: Uxxxxxxxx"
-                value={lineUserId}
-                onChange={(event) => setLineUserId(event.target.value)}
-              />
-            </div>
-          ) : (
-            <div className="stack" style={{ gap: 8 }}>
-              <label>LINE User ID（LIFF取得）</label>
-              <input className="input" value={lineUserId} readOnly />
-            </div>
-          )}
+          <div className="stack" style={{ gap: 8 }}>
+            <label>LINE User ID（LIFF取得）</label>
+            <input className="input" value={lineUserId} readOnly />
+          </div>
 
           {identityLoading && <p className="subtle">LIFF連携を初期化中です...</p>}
           {identityMessage && <p className="subtle">{identityMessage}</p>}
@@ -147,10 +122,6 @@ export default function SerialPage() {
             {submitting ? "認証中..." : "認証して結果を受け取る"}
           </button>
         </form>
-
-        <p className="subtle">
-          将来の本番切替は、環境変数で `manual` と `liff` を切り替えるだけで適用できます。
-        </p>
       </div>
     </main>
   );
