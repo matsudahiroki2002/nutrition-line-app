@@ -22,7 +22,7 @@ export type SerialEntity = {
   status: SerialStatus;
   resultImageUrl: string;
   purchaseLink: string;
-  usedByUserUuid?: string | null;
+  targetUserUuid?: string | null;
   usedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;

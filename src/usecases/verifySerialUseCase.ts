@@ -56,60 +56,85 @@ export class VerifySerialUseCase {
 
     const boundUser = await this.userRepository.findByLineUserId(lineUserId);
 
-    if (boundUser) {
-      const normalizedStoredName = boundUser.name ? normalizeInputName(boundUser.name) : "";
+    const serial = await this.serialRepository.findByCode(serialCode);
 
-      if (!normalizedStoredName || normalizedStoredName !== normalizedInputName) {
-        const logId = await this.authLogRepository.create({
-          userId: boundUser.userUuid,
-          lineUserId,
-          serialCode,
-          result: "invalid",
-          message: "氏名またはシリアルIDが無効です",
-          lineSendStatus: "skipped"
-        });
+    if (!serial) {
+      const logId = await this.authLogRepository.create({
+        lineUserId,
+        serialCode,
+        result: "invalid",
+        message: "シリアルIDが無効です",
+        lineSendStatus: "skipped"
+      });
 
-        return { logId };
-      }
+      return { logId };
+    }
+
+    if (!serial.targetUserUuid) {
+      const logId = await this.authLogRepository.create({
+        lineUserId,
+        serialCode,
+        result: "error",
+        message: "シリアルに対象ユーザーが設定されていません。運営へお問い合わせください。",
+        lineSendStatus: "skipped"
+      });
+
+      return { logId };
+    }
+
+    const targetUser = await this.userRepository.findById(serial.targetUserUuid);
+
+    if (!targetUser) {
+      const logId = await this.authLogRepository.create({
+        lineUserId,
+        serialCode,
+        result: "error",
+        message: "シリアルに紐づくユーザーが見つかりません。運営へお問い合わせください。",
+        lineSendStatus: "skipped"
+      });
+
+      return { logId };
+    }
+
+    const normalizedStoredName = targetUser.name ? normalizeInputName(targetUser.name) : "";
+
+    if (!normalizedStoredName || normalizedStoredName !== normalizedInputName) {
+      const logId = await this.authLogRepository.create({
+        userId: targetUser.userUuid,
+        lineUserId,
+        serialCode,
+        result: "invalid",
+        message: "氏名またはシリアルIDが無効です",
+        lineSendStatus: "skipped"
+      });
+
+      return { logId };
+    }
+
+    if (boundUser && boundUser.userUuid !== targetUser.userUuid) {
+      const logId = await this.authLogRepository.create({
+        userId: boundUser.userUuid,
+        lineUserId,
+        serialCode,
+        result: "invalid",
+        message: "このLINEアカウントは別のユーザーに紐づいています",
+        lineSendStatus: "skipped"
+      });
+
+      return { logId };
     }
 
     let user = boundUser;
 
     if (!user) {
-      const candidates = await this.userRepository.findActiveByNormalizedName(normalizedInputName);
-
-      if (candidates.length === 0) {
-        const logId = await this.authLogRepository.create({
-          lineUserId,
-          serialCode,
-          result: "invalid",
-          message: "氏名またはシリアルIDが無効です",
-          lineSendStatus: "skipped"
-        });
-
-        return { logId };
-      }
-
-      if (candidates.length > 1) {
-        const logId = await this.authLogRepository.create({
-          lineUserId,
-          serialCode,
-          result: "invalid",
-          message: "同姓同名のユーザーが存在するため認証できません。運営へお問い合わせください。",
-          lineSendStatus: "skipped"
-        });
-
-        return { logId };
-      }
-
       const bindResult = await this.userRepository.bindLineUserIdOnFirstAuth({
-        userUuid: candidates[0].userUuid,
+        userUuid: targetUser.userUuid,
         lineUserId
       });
 
       if (bindResult.kind === "not_found" || bindResult.kind === "line_user_conflict") {
         const logId = await this.authLogRepository.create({
-          userId: candidates[0].userUuid,
+          userId: targetUser.userUuid,
           lineUserId,
           serialCode,
           result: "invalid",
@@ -123,19 +148,7 @@ export class VerifySerialUseCase {
       user = bindResult.user;
     }
 
-    if (!user) {
-      const logId = await this.authLogRepository.create({
-        lineUserId,
-        serialCode,
-        result: "invalid",
-        message: "ユーザー情報が未登録です。運営へお問い合わせください。",
-        lineSendStatus: "skipped"
-      });
-
-      return { logId };
-    }
-
-    const consumeResult = await this.serialRepository.consumeIfUnused(serialCode, user.userUuid);
+    const consumeResult = await this.serialRepository.consumeIfUnused(serialCode);
 
     if (consumeResult.kind === "not_found" || consumeResult.kind === "invalid") {
       const logId = await this.authLogRepository.create({

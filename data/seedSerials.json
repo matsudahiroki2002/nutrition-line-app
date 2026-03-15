@@ -39,6 +39,8 @@
     "serialCode": "TEST-MATSUDA",
     "status": "unused",
     "resultImageUrl": "https://picsum.photos/seed/matsuda/1200/1800",
-    "purchaseLink": "https://example.com/supplement/matsuda"
+    "purchaseLink": "https://example.com/supplement/matsuda",
+    "targetUserUuid": "USR-MATSUDA"
+    
   }
 ]

@@ -9,7 +9,7 @@ type SerialDoc = {
   status: SerialStatus;
   resultImageUrl: string;
   purchaseLink: string;
-  usedByUserUuid?: string | null;
+  targetUserUuid?: string | null;
   usedAt?: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -32,7 +32,7 @@ function toSerialEntity(id: string, doc: SerialDoc): SerialEntity {
     status: doc.status,
     resultImageUrl: doc.resultImageUrl,
     purchaseLink: doc.purchaseLink,
-    usedByUserUuid: doc.usedByUserUuid ?? null,
+    targetUserUuid: doc.targetUserUuid ?? null,
     usedAt: doc.usedAt?.toDate() ?? null,
     createdAt: doc.createdAt.toDate(),
     updatedAt: doc.updatedAt.toDate()
@@ -57,7 +57,7 @@ export class SerialRepository {
     return toSerialEntity(snapshot.id, snapshot.data() as SerialDoc);
   }
 
-  async consumeIfUnused(serialCode: string, userUuid: string): Promise<ConsumeSerialResult> {
+  async consumeIfUnused(serialCode: string): Promise<ConsumeSerialResult> {
     const ref = this.serialDocRef(serialCode);
 
     return this.db.runTransaction(async (transaction) => {
@@ -80,7 +80,6 @@ export class SerialRepository {
 
       transaction.update(ref, {
         status: "used",
-        usedByUserUuid: userUuid,
         usedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       });
@@ -90,7 +89,6 @@ export class SerialRepository {
         serial: {
           ...serial,
           status: "used",
-          usedByUserUuid: userUuid,
           usedAt: new Date(),
           updatedAt: new Date()
         }
@@ -104,7 +102,7 @@ export class SerialRepository {
       status: SerialStatus;
       resultImageUrl: string;
       purchaseLink: string;
-      usedByUserUuid?: string | null;
+      targetUserUuid?: string | null;
     }
   ): Promise<void> {
     const normalized = normalizeSerial(serial.serialCode);
@@ -118,7 +116,7 @@ export class SerialRepository {
         status: serial.status,
         resultImageUrl: serial.resultImageUrl,
         purchaseLink: serial.purchaseLink,
-        usedByUserUuid: isUsed ? serial.usedByUserUuid ?? null : null,
+        targetUserUuid: serial.targetUserUuid ?? null,
         usedAt: isUsed ? FieldValue.serverTimestamp() : null,
         updatedAt: FieldValue.serverTimestamp()
       };

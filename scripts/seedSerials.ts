@@ -12,7 +12,7 @@ type SeedSerialRow = {
   status: SerialStatus;
   resultImageUrl: string;
   purchaseLink: string;
-  usedByUserUuid?: string | null;
+  targetUserUuid?: string | null;
 };
 
 async function main() {
