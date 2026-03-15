@@ -54,28 +54,81 @@ export class VerifySerialUseCase {
       throw new Error("lineUserId, serialCode and name are required");
     }
 
-    const user = await this.userRepository.findByLineUserId(lineUserId);
-    const normalizedStoredName = user?.name ? normalizeInputName(user.name) : "";
+    const boundUser = await this.userRepository.findByLineUserId(lineUserId);
 
-    if (!user || !normalizedStoredName) {
+    if (boundUser) {
+      const normalizedStoredName = boundUser.name ? normalizeInputName(boundUser.name) : "";
+
+      if (!normalizedStoredName || normalizedStoredName !== normalizedInputName) {
+        const logId = await this.authLogRepository.create({
+          userId: boundUser.userUuid,
+          lineUserId,
+          serialCode,
+          result: "invalid",
+          message: "氏名またはシリアルIDが無効です",
+          lineSendStatus: "skipped"
+        });
+
+        return { logId };
+      }
+    }
+
+    let user = boundUser;
+
+    if (!user) {
+      const candidates = await this.userRepository.findActiveByNormalizedName(normalizedInputName);
+
+      if (candidates.length === 0) {
+        const logId = await this.authLogRepository.create({
+          lineUserId,
+          serialCode,
+          result: "invalid",
+          message: "氏名またはシリアルIDが無効です",
+          lineSendStatus: "skipped"
+        });
+
+        return { logId };
+      }
+
+      if (candidates.length > 1) {
+        const logId = await this.authLogRepository.create({
+          lineUserId,
+          serialCode,
+          result: "invalid",
+          message: "同姓同名のユーザーが存在するため認証できません。運営へお問い合わせください。",
+          lineSendStatus: "skipped"
+        });
+
+        return { logId };
+      }
+
+      const bindResult = await this.userRepository.bindLineUserIdOnFirstAuth({
+        userUuid: candidates[0].userUuid,
+        lineUserId
+      });
+
+      if (bindResult.kind === "not_found" || bindResult.kind === "line_user_conflict") {
+        const logId = await this.authLogRepository.create({
+          userId: candidates[0].userUuid,
+          lineUserId,
+          serialCode,
+          result: "invalid",
+          message: "LINEアカウントの紐付けに失敗しました。運営へお問い合わせください。",
+          lineSendStatus: "skipped"
+        });
+
+        return { logId };
+      }
+
+      user = bindResult.user;
+    }
+
+    if (!user) {
       const logId = await this.authLogRepository.create({
         lineUserId,
         serialCode,
         result: "invalid",
         message: "ユーザー情報が未登録です。運営へお問い合わせください。",
-        lineSendStatus: "skipped"
-      });
-
-      return { logId };
-    }
-
-    if (normalizedStoredName !== normalizedInputName) {
-      const logId = await this.authLogRepository.create({
-        userId: user.userUuid,
-        lineUserId,
-        serialCode,
-        result: "invalid",
-        message: "氏名またはシリアルIDが無効です",
         lineSendStatus: "skipped"
       });
 

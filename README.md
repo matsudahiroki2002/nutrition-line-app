@@ -41,7 +41,9 @@
 │   ├── layout.tsx
 │   ├── page.tsx
 │   └── not-found.tsx
+├── data/seedUsers.json
 ├── data/seedSerials.json
+├── scripts/seedUsers.ts
 ├── scripts/seedSerials.ts
 ├── src
 │   ├── domain/types.ts
@@ -67,10 +69,10 @@
 ## 5. Firestoreデータ設計
 
 ### collection: `users`
-- document id: `{lineUserId}`
+- document id: `{userUuid}`
 - fields:
   - `userUuid: string` (内部識別子)
-  - `lineUserId: string`
+  - `lineUserId: string | null` (初期値 `null`。初回LIFF認証成功時に紐付け)
   - `name: string` (必須)
   - `normalizedName: string` (`NFKC`正規化後に英数字記号を全角化し、全角/半角スペースを含む空白を全除去)
   - `status: "active"`
@@ -143,11 +145,26 @@ npm run dev
 
 ## 9. seedデータ投入
 
-`data/seedSerials.json` を編集して投入:
+`users` と `serials` をまとめて投入:
 
 ```bash
 npm run seed
 ```
+
+個別実行:
+
+```bash
+npm run seed:users
+npm run seed:serials
+```
+
+初期テストケース（`data/seedUsers.json` / `data/seedSerials.json`）:
+- 守屋大地: `TEST-MORIYA`
+- 青木健太郎: `TEST-AOKI`
+- 松田大喜: `TEST-MATSUDA`
+
+認証は `漢字氏名 + シリアルID` で実行され、初回成功時に `lineUserId` が対象ユーザーへ紐付けされます。
+`data/seedUsers.json` は `lineUserId: null` のままで投入できます。
 
 ## 10. 最低限のテスト観点
 

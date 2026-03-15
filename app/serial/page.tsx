@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createLineIdentityService } from "@/src/services/identity/lineIdentityService";
+import { closeLiffWindowIfPossible, createLineIdentityService } from "@/src/services/identity/lineIdentityService";
 
 type VerifyApiResponse = {
   ok: boolean;
@@ -86,6 +86,10 @@ export default function SerialPage() {
 
       if (!response.ok || !data.ok || !data.logId) {
         throw new Error(data.message ?? "認証処理に失敗しました。");
+      }
+
+      if (closeLiffWindowIfPossible()) {
+        return;
       }
 
       router.push(`/result/${data.logId}`);

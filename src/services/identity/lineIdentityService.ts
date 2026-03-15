@@ -18,8 +18,10 @@ type LiffProfile = {
 type LiffSdk = {
   init: (input: { liffId: string }) => Promise<void>;
   isLoggedIn: () => boolean;
+  isInClient?: () => boolean;
   login: (input?: { redirectUri?: string }) => void;
   getProfile: () => Promise<LiffProfile>;
+  closeWindow?: () => void;
 };
 
 declare global {
@@ -126,4 +128,28 @@ class LiffLineIdentityService implements LineIdentityService {
 
 export function createLineIdentityService(): LineIdentityService {
   return new LiffLineIdentityService(publicEnv.NEXT_PUBLIC_LIFF_ID);
+}
+
+export function closeLiffWindowIfPossible(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const liff = window.liff;
+  const closeWindow = liff?.closeWindow;
+
+  if (!liff || typeof closeWindow !== "function") {
+    return false;
+  }
+
+  if (typeof liff.isInClient === "function" && !liff.isInClient()) {
+    return false;
+  }
+
+  try {
+    closeWindow();
+    return true;
+  } catch {
+    return false;
+  }
 }

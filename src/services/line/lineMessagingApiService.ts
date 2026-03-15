@@ -21,6 +21,16 @@ type LineErrorResponse = {
   details?: Array<{ message?: string; property?: string }>;
 };
 
+function resolvePushEndpoint(baseUrl: string): string {
+  const normalizedBase = baseUrl.trim().replace(/\/+$/, "");
+  return `${normalizedBase}/v2/bot/message/push`;
+}
+
+function resolveAccessToken(rawToken: string): string {
+  // Hidden CR/LF in .env can break header creation on some runtimes.
+  return rawToken.replace(/[\r\n]+/g, "").trim();
+}
+
 function normalizeLineErrorCode(status: number): string {
   if (status === 400) {
     return "bad_request";
@@ -63,16 +73,32 @@ function buildPushBody(input: SendResultBundleInput): LinePushBody {
 
 export class LineMessagingApiService implements LineService {
   async sendResultBundle(input: SendResultBundleInput) {
-    const response = await fetch(`${env.LINE_API_BASE_URL}/v2/bot/message/push`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.LINE_CHANNEL_ACCESS_TOKEN}`
-      },
-      body: JSON.stringify(buildPushBody(input))
-    });
+    let response: Response;
+    let lineRequestId: string | undefined;
 
-    const lineRequestId = response.headers.get("x-line-request-id") ?? undefined;
+    try {
+      response = await fetch(resolvePushEndpoint(env.LINE_API_BASE_URL), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${resolveAccessToken(env.LINE_CHANNEL_ACCESS_TOKEN)}`
+        },
+        body: JSON.stringify(buildPushBody(input))
+      });
+      lineRequestId = response.headers.get("x-line-request-id") ?? undefined;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "LINE Messaging API request failed before response";
+
+      return {
+        ok: false,
+        provider: "line" as const,
+        status: "failed" as const,
+        message: `LINE Messaging API request failed: ${message}`,
+        lineErrorCode: "line_request_error",
+        lineRequestId
+      };
+    }
 
     if (!response.ok) {
       let lineMessage = `LINE Messaging API error: ${response.status}`;

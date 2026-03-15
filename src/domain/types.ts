@@ -9,7 +9,7 @@ export type LineSendStatus = "sent" | "skipped" | "failed";
 export type UserEntity = {
   id: string;
   userUuid: string;
-  lineUserId: string;
+  lineUserId?: string | null;
   name: string;
   status: UserStatus;
   createdAt: Date;
