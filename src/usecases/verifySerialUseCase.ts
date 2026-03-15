@@ -2,12 +2,14 @@ import { AuthLogRepository } from "@/src/repositories/authLogRepository";
 import { SerialRepository } from "@/src/repositories/serialRepository";
 import type { ConsumeSerialResult } from "@/src/repositories/serialRepository";
 import { UserRepository } from "@/src/repositories/userRepository";
+import { normalizeJapaneseName } from "@/src/lib/nameNormalizer";
 import { getLineService } from "@/src/services/line";
 import { env } from "@/src/lib/env";
 
 export type VerifySerialInput = {
   serialCode: string;
   lineUserId: string;
+  name: string;
 };
 
 export type VerifySerialOutput = {
@@ -20,6 +22,10 @@ function normalizeSerialCode(serialCode: string): string {
 
 function normalizeUserId(lineUserId: string): string {
   return lineUserId.trim();
+}
+
+function normalizeInputName(name: string): string {
+  return normalizeJapaneseName(name);
 }
 
 function isResultDataMissing(consumeResult: ConsumeSerialResult): boolean {
@@ -39,24 +45,49 @@ export class VerifySerialUseCase {
   private userRepository = new UserRepository();
 
   async execute(input: VerifySerialInput): Promise<VerifySerialOutput> {
-    const userId = normalizeUserId(input.lineUserId);
+    const lineUserId = normalizeUserId(input.lineUserId);
     const serialCode = normalizeSerialCode(input.serialCode);
+    const name = input.name.trim();
+    const normalizedInputName = normalizeInputName(name);
 
-    if (!userId || !serialCode) {
-      throw new Error("lineUserId and serialCode are required");
+    if (!lineUserId || !serialCode || !normalizedInputName) {
+      throw new Error("lineUserId, serialCode and name are required");
     }
 
-    await this.userRepository.upsertActiveUser({
-      userId,
-      lineUserId: userId,
-      displayName: null
-    });
+    const user = await this.userRepository.findByLineUserId(lineUserId);
+    const normalizedStoredName = user?.name ? normalizeInputName(user.name) : "";
 
-    const consumeResult = await this.serialRepository.consumeIfUnused(userId, serialCode);
+    if (!user || !normalizedStoredName) {
+      const logId = await this.authLogRepository.create({
+        lineUserId,
+        serialCode,
+        result: "invalid",
+        message: "ユーザー情報が未登録です。運営へお問い合わせください。",
+        lineSendStatus: "skipped"
+      });
+
+      return { logId };
+    }
+
+    if (normalizedStoredName !== normalizedInputName) {
+      const logId = await this.authLogRepository.create({
+        userId: user.userUuid,
+        lineUserId,
+        serialCode,
+        result: "invalid",
+        message: "氏名またはシリアルIDが無効です",
+        lineSendStatus: "skipped"
+      });
+
+      return { logId };
+    }
+
+    const consumeResult = await this.serialRepository.consumeIfUnused(serialCode, user.userUuid);
 
     if (consumeResult.kind === "not_found" || consumeResult.kind === "invalid") {
       const logId = await this.authLogRepository.create({
-        userId,
+        userId: user.userUuid,
+        lineUserId,
         serialCode,
         result: "invalid",
         message: "シリアルIDが無効です",
@@ -68,7 +99,8 @@ export class VerifySerialUseCase {
 
     if (consumeResult.kind === "used") {
       const logId = await this.authLogRepository.create({
-        userId,
+        userId: user.userUuid,
+        lineUserId,
         serialCode,
         result: "used",
         message: "このシリアルIDは既に使用済みです",
@@ -80,7 +112,8 @@ export class VerifySerialUseCase {
 
     if (isResultDataMissing(consumeResult)) {
       const logId = await this.authLogRepository.create({
-        userId,
+        userId: user.userUuid,
+        lineUserId,
         serialCode,
         result: "error",
         message: "診断結果の設定が不足しています。運営へお問い合わせください",
@@ -94,14 +127,15 @@ export class VerifySerialUseCase {
     const resolvedPurchaseLink = consumeResult.serial.purchaseLink || env.PURCHASE_LINK_DEFAULT || "";
     const lineResult = await lineService.sendResultBundle({
       serialCode,
-      lineUserId: userId,
+      lineUserId,
       resultImageUrl: consumeResult.serial.resultImageUrl,
       purchaseLink: resolvedPurchaseLink
     });
 
     if (!lineResult.ok) {
       const logId = await this.authLogRepository.create({
-        userId,
+        userId: user.userUuid,
+        lineUserId,
         serialCode,
         result: "error",
         message: `認証は完了しましたが通知送信に失敗しました: ${lineResult.message}`,
@@ -114,7 +148,8 @@ export class VerifySerialUseCase {
     }
 
     const logId = await this.authLogRepository.create({
-      userId,
+      userId: user.userUuid,
+      lineUserId,
       serialCode,
       result: "success",
       message: "認証が完了しました。診断結果をご確認ください",

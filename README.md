@@ -9,7 +9,7 @@
 - シリアル入力画面
 - 結果画面（成功 / 無効 / 使用済み / エラー）
 - シリアル認証API（Firestore連携）
-- `users` / `users/{userId}/serials` / `authLogs` への保存
+- `users` / `serials` / `authLogs` への保存
 - LIFFでLINE User IDを取得してMessaging APIで通知送信
 - seedスクリプト
 
@@ -67,21 +67,24 @@
 ## 5. Firestoreデータ設計
 
 ### collection: `users`
-- document id: `{userId}` (`lineUserId` を利用)
+- document id: `{lineUserId}`
 - fields:
+  - `userUuid: string` (内部識別子)
   - `lineUserId: string`
-  - `displayName: string | null`
+  - `name: string` (必須)
+  - `normalizedName: string` (`NFKC`正規化後に英数字記号を全角化し、全角/半角スペースを含む空白を全除去)
   - `status: "active"`
   - `createdAt: Timestamp`
   - `updatedAt: Timestamp`
 
-### subcollection: `users/{userId}/serials`
+### collection: `serials`
 - document id: `{serialCode}`
 - fields:
   - `serialCode: string`
   - `status: "unused" | "used" | "invalid"`
   - `resultImageUrl: string`
   - `purchaseLink: string`
+  - `usedByUserUuid: string | null`
   - `usedAt: Timestamp | null`
   - `createdAt: Timestamp`
   - `updatedAt: Timestamp`
@@ -104,6 +107,7 @@
 - request:
   - `serialCode: string` (required)
   - `lineUserId: string` (required)
+  - `name: string` (required)
 - response:
   - success: `{ ok: true, logId: string }`
   - error: `{ ok: false, message: string }`

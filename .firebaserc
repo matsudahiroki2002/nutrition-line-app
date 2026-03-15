@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "nutrition-line-poc-b54c8",
+    "prod": "nutrition-lineapp"
+  },
+  "targets": {},
+  "etags": {}
+}

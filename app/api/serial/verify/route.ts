@@ -4,7 +4,8 @@ import { VerifySerialUseCase } from "@/src/usecases/verifySerialUseCase";
 
 const requestSchema = z.object({
   serialCode: z.string().min(1, "serialCode is required"),
-  lineUserId: z.string().min(1, "lineUserId is required")
+  lineUserId: z.string().min(1, "lineUserId is required"),
+  name: z.string().trim().min(1, "name is required").max(80)
 });
 
 export async function POST(request: Request) {
@@ -25,7 +26,8 @@ export async function POST(request: Request) {
     const useCase = new VerifySerialUseCase();
     const output = await useCase.execute({
       serialCode: parsed.data.serialCode,
-      lineUserId: parsed.data.lineUserId
+      lineUserId: parsed.data.lineUserId,
+      name: parsed.data.name
     });
 
     return NextResponse.json({

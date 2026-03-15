@@ -12,25 +12,41 @@ type PageProps = {
 const statusMap = {
   success: {
     title: "認証が完了しました",
-    className: "ok",
-    fallbackMessage: "詳細診断結果をご確認ください。"
+    className: "ok"
   },
   invalid: {
-    title: "シリアルIDが無効です",
-    className: "danger",
-    fallbackMessage: "入力内容をご確認の上、再度お試しください。"
+    title: "認証できませんでした",
+    className: "danger"
   },
   used: {
     title: "このシリアルは使用済みです",
-    className: "danger",
-    fallbackMessage: "すでに認証済みのシリアルIDです。"
+    className: "danger"
   },
   error: {
     title: "処理中にエラーが発生しました",
-    className: "danger",
-    fallbackMessage: "時間をおいて再度お試しください。"
+    className: "danger"
   }
 } as const;
+
+function resolveDescription(result: keyof typeof statusMap, lineSendStatus: string): string {
+  if (result === "success" && lineSendStatus === "failed") {
+    return "認証は完了しましたが、LINE通知の送信に失敗しました。時間をおいて再度お試しください。";
+  }
+
+  if (result === "success") {
+    return "診断結果を確認できます。必要に応じておすすめ商品の詳細もご覧ください。";
+  }
+
+  if (result === "invalid") {
+    return "氏名またはシリアルIDが一致しません。入力内容をご確認ください。";
+  }
+
+  if (result === "used") {
+    return "このシリアルIDはすでに認証済みです。";
+  }
+
+  return "通信環境をご確認のうえ、時間をおいて再度お試しください。";
+}
 
 export default async function ResultPage({ params }: PageProps) {
   const { logId } = await params;
@@ -44,9 +60,10 @@ export default async function ResultPage({ params }: PageProps) {
     notFound();
   }
 
-  const serial = await serialRepository.findByCode(log.userId, log.serialCode);
+  const serial = await serialRepository.findByCode(log.serialCode);
 
   const statusView = statusMap[log.result];
+  const description = resolveDescription(log.result, log.lineSendStatus);
   const canShowImage = log.result === "success" && Boolean(serial?.resultImageUrl);
   const canShowPurchase = log.result === "success" && Boolean(serial?.purchaseLink);
 
@@ -55,22 +72,17 @@ export default async function ResultPage({ params }: PageProps) {
       <div className="card stack">
         <span className="badge">Step 2</span>
         <h2>{statusView.title}</h2>
-        <p className={`status ${statusView.className}`}>{log.message || statusView.fallbackMessage}</p>
-
-        <div className="stack" style={{ gap: 8 }}>
-          <p className="subtle">LINE User ID: {log.userId || "-"}</p>
-          <p className="subtle">シリアルID: {log.serialCode || "-"}</p>
-          <p className="subtle">送信ステータス: {log.lineSendStatus}</p>
-          {log.lineErrorCode && <p className="subtle">LINEエラーコード: {log.lineErrorCode}</p>}
-          {log.lineRequestId && <p className="subtle">LINE Request ID: {log.lineRequestId}</p>}
-        </div>
+        <p className={`status ${statusView.className}`}>{description}</p>
 
         {canShowImage && (
           <div className="stack">
-            <p>詳細診断結果</p>
-            {/* MVPでは公開URL画像をそのまま表示。Storage署名URLに差し替え可能。 */}
+            <p>診断結果</p>
             <img src={serial?.resultImageUrl ?? ""} alt="診断結果画像" className="resultImage" />
           </div>
+        )}
+
+        {log.result === "success" && !canShowImage && (
+          <p className="subtle">診断結果の表示準備中です。しばらくしてから再度お試しください。</p>
         )}
 
         {canShowPurchase && (
@@ -81,10 +93,7 @@ export default async function ResultPage({ params }: PageProps) {
 
         <div className="footerLinks">
           <Link href="/serial" className="outlineBtn">
-            別のシリアルを入力する
-          </Link>
-          <Link href="/" className="outlineBtn">
-            入口ページに戻る
+            もう一度入力する
           </Link>
         </div>
       </div>

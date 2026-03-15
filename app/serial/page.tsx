@@ -14,6 +14,7 @@ export default function SerialPage() {
   const router = useRouter();
   const identityService = useMemo(() => createLineIdentityService(), []);
 
+  const [name, setName] = useState("");
   const [serialCode, setSerialCode] = useState("");
   const [lineUserId, setLineUserId] = useState("");
   const [identityLoading, setIdentityLoading] = useState(true);
@@ -32,11 +33,12 @@ export default function SerialPage() {
       }
 
       setIdentityLoading(false);
-      setIdentityMessage(result.message ?? null);
+      setIdentityMessage(result.lineUserId ? null : (result.message ?? null));
 
       if (result.lineUserId) {
         setLineUserId(result.lineUserId);
       }
+
     }
 
     void resolveIdentity();
@@ -55,6 +57,11 @@ export default function SerialPage() {
       return;
     }
 
+    if (!name.trim()) {
+      setErrorMessage("漢字氏名を入力してください。");
+      return;
+    }
+
     if (!lineUserId.trim()) {
       setErrorMessage("LINEユーザー情報を取得できていません。LINEアプリ内で開き直して再試行してください。");
       return;
@@ -70,7 +77,8 @@ export default function SerialPage() {
         },
         body: JSON.stringify({
           serialCode,
-          lineUserId
+          lineUserId,
+          name
         })
       });
 
@@ -93,10 +101,22 @@ export default function SerialPage() {
     <main className="main">
       <div className="card stack">
         <span className="badge">Step 1</span>
-        <h2>シリアルIDを入力してください</h2>
-        <p>チラシの英数字をそのまま入力してください。入力後に認証を行います。</p>
+        <h2>認証情報を入力してください</h2>
+        <p>漢字氏名と、チラシに記載されたシリアルIDを入力してください。</p>
 
         <form className="stack" onSubmit={onSubmit}>
+          <div className="stack" style={{ gap: 8 }}>
+            <label htmlFor="name">漢字氏名</label>
+            <input
+              id="name"
+              className="input"
+              placeholder="例: 松田太郎"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              autoComplete="name"
+            />
+          </div>
+
           <div className="stack" style={{ gap: 8 }}>
             <label htmlFor="serialCode">シリアルID</label>
             <input
@@ -109,17 +129,12 @@ export default function SerialPage() {
             />
           </div>
 
-          <div className="stack" style={{ gap: 8 }}>
-            <label>LINE User ID（LIFF取得）</label>
-            <input className="input" value={lineUserId} readOnly />
-          </div>
-
-          {identityLoading && <p className="subtle">LIFF連携を初期化中です...</p>}
-          {identityMessage && <p className="subtle">{identityMessage}</p>}
+          {identityLoading && <p className="subtle">LINE連携を確認中です...</p>}
+          {identityMessage && <p className="status danger">{identityMessage}</p>}
           {errorMessage && <p className="status danger">{errorMessage}</p>}
 
           <button type="submit" className="button" disabled={submitting || identityLoading}>
-            {submitting ? "認証中..." : "認証して結果を受け取る"}
+            {submitting ? "認証中..." : "認証して結果を確認する"}
           </button>
         </form>
       </div>

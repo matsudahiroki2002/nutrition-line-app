@@ -1,17 +1,15 @@
-import "server-only";
-
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getDb } from "@/src/lib/firebaseAdmin";
 import type { SerialEntity, SerialStatus } from "@/src/domain/types";
 
-const USERS_COLLECTION = "users";
-const SERIALS_SUBCOLLECTION = "serials";
+const SERIALS_COLLECTION = "serials";
 
 type SerialDoc = {
   serialCode: string;
   status: SerialStatus;
   resultImageUrl: string;
   purchaseLink: string;
+  usedByUserUuid?: string | null;
   usedAt?: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -27,14 +25,14 @@ function normalizeSerial(serialCode: string): string {
   return serialCode.trim().toUpperCase();
 }
 
-function toSerialEntity(userId: string, id: string, doc: SerialDoc): SerialEntity {
+function toSerialEntity(id: string, doc: SerialDoc): SerialEntity {
   return {
     id,
-    userId,
     serialCode: doc.serialCode,
     status: doc.status,
     resultImageUrl: doc.resultImageUrl,
     purchaseLink: doc.purchaseLink,
+    usedByUserUuid: doc.usedByUserUuid ?? null,
     usedAt: doc.usedAt?.toDate() ?? null,
     createdAt: doc.createdAt.toDate(),
     updatedAt: doc.updatedAt.toDate()
@@ -44,27 +42,23 @@ function toSerialEntity(userId: string, id: string, doc: SerialDoc): SerialEntit
 export class SerialRepository {
   private db = getDb();
 
-  private serialDocRef(userId: string, serialCode: string) {
-    return this.db
-      .collection(USERS_COLLECTION)
-      .doc(userId)
-      .collection(SERIALS_SUBCOLLECTION)
-      .doc(normalizeSerial(serialCode));
+  private serialDocRef(serialCode: string) {
+    return this.db.collection(SERIALS_COLLECTION).doc(normalizeSerial(serialCode));
   }
 
-  async findByCode(userId: string, serialCode: string): Promise<SerialEntity | null> {
-    const ref = this.serialDocRef(userId, serialCode);
+  async findByCode(serialCode: string): Promise<SerialEntity | null> {
+    const ref = this.serialDocRef(serialCode);
     const snapshot = await ref.get();
 
     if (!snapshot.exists) {
       return null;
     }
 
-    return toSerialEntity(userId, snapshot.id, snapshot.data() as SerialDoc);
+    return toSerialEntity(snapshot.id, snapshot.data() as SerialDoc);
   }
 
-  async consumeIfUnused(userId: string, serialCode: string): Promise<ConsumeSerialResult> {
-    const ref = this.serialDocRef(userId, serialCode);
+  async consumeIfUnused(serialCode: string, userUuid: string): Promise<ConsumeSerialResult> {
+    const ref = this.serialDocRef(serialCode);
 
     return this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(ref);
@@ -74,7 +68,7 @@ export class SerialRepository {
       }
 
       const doc = snapshot.data() as SerialDoc;
-      const serial = toSerialEntity(userId, snapshot.id, doc);
+      const serial = toSerialEntity(snapshot.id, doc);
 
       if (doc.status === "used") {
         return { kind: "used", serial };
@@ -86,6 +80,7 @@ export class SerialRepository {
 
       transaction.update(ref, {
         status: "used",
+        usedByUserUuid: userUuid,
         usedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       });
@@ -95,6 +90,7 @@ export class SerialRepository {
         serial: {
           ...serial,
           status: "used",
+          usedByUserUuid: userUuid,
           usedAt: new Date(),
           updatedAt: new Date()
         }
@@ -103,21 +99,17 @@ export class SerialRepository {
   }
 
   async upsertSeed(
-    userId: string,
     serial: {
       serialCode: string;
       status: SerialStatus;
       resultImageUrl: string;
       purchaseLink: string;
+      usedByUserUuid?: string | null;
     }
   ): Promise<void> {
     const normalized = normalizeSerial(serial.serialCode);
     const isUsed = serial.status === "used";
-    const ref = this.db
-      .collection(USERS_COLLECTION)
-      .doc(userId)
-      .collection(SERIALS_SUBCOLLECTION)
-      .doc(normalized);
+    const ref = this.db.collection(SERIALS_COLLECTION).doc(normalized);
 
     await this.db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(ref);
@@ -126,6 +118,7 @@ export class SerialRepository {
         status: serial.status,
         resultImageUrl: serial.resultImageUrl,
         purchaseLink: serial.purchaseLink,
+        usedByUserUuid: isUsed ? serial.usedByUserUuid ?? null : null,
         usedAt: isUsed ? FieldValue.serverTimestamp() : null,
         updatedAt: FieldValue.serverTimestamp()
       };

@@ -2,6 +2,7 @@ import { publicEnv } from "@/src/lib/publicEnv";
 
 export type ResolveLineIdentityResult = {
   lineUserId: string | null;
+  displayName: string | null;
   message?: string;
 };
 
@@ -11,6 +12,7 @@ export interface LineIdentityService {
 
 type LiffProfile = {
   userId: string;
+  displayName?: string;
 };
 
 type LiffSdk = {
@@ -82,7 +84,8 @@ class LiffLineIdentityService implements LineIdentityService {
     if (!this.liffId) {
       return {
         lineUserId: null,
-        message: "LIFF IDが未設定です。環境変数 NEXT_PUBLIC_LIFF_ID を設定してください。"
+        displayName: null,
+        message: "現在このページを利用できません。時間をおいて再度お試しください。"
       };
     }
 
@@ -99,7 +102,8 @@ class LiffLineIdentityService implements LineIdentityService {
         window.liff.login({ redirectUri: window.location.href });
         return {
           lineUserId: null,
-          message: "LINEログインへ遷移しています。"
+          displayName: null,
+          message: undefined
         };
       }
 
@@ -107,11 +111,13 @@ class LiffLineIdentityService implements LineIdentityService {
 
       return {
         lineUserId: profile.userId,
-        message: "LIFFからLINEユーザー情報を取得しました。"
+        displayName: profile.displayName ?? null,
+        message: undefined
       };
     } catch (_error) {
       return {
         lineUserId: null,
+        displayName: null,
         message: "LIFF連携に失敗しました。LINEアプリ内でページを開き直してください。"
       };
     }

@@ -8,8 +8,9 @@ export type LineSendStatus = "sent" | "skipped" | "failed";
 
 export type UserEntity = {
   id: string;
+  userUuid: string;
   lineUserId: string;
-  displayName: string | null;
+  name: string;
   status: UserStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -17,11 +18,11 @@ export type UserEntity = {
 
 export type SerialEntity = {
   id: string;
-  userId: string;
   serialCode: string;
   status: SerialStatus;
   resultImageUrl: string;
   purchaseLink: string;
+  usedByUserUuid?: string | null;
   usedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -29,7 +30,8 @@ export type SerialEntity = {
 
 export type AuthLogEntity = {
   id: string;
-  userId: string;
+  userId?: string | null;
+  lineUserId?: string | null;
   serialCode: string;
   result: AuthResult;
   message: string;

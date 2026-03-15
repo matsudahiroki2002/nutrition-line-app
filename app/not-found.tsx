@@ -6,8 +6,8 @@ export default function NotFoundPage() {
       <div className="card stack">
         <h2>結果が見つかりませんでした</h2>
         <p>URLが正しいか確認して、もう一度お試しください。</p>
-        <Link href="/" className="linkButton">
-          入口ページへ戻る
+        <Link href="/serial" className="linkButton">
+          入力ページへ戻る
         </Link>
       </div>
     </main>

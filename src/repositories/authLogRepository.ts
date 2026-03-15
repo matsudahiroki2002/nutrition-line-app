@@ -1,5 +1,3 @@
-import "server-only";
-
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import type { AuthLogEntity, AuthResult, LineSendStatus } from "@/src/domain/types";
 import { getDb } from "@/src/lib/firebaseAdmin";
@@ -7,7 +5,8 @@ import { getDb } from "@/src/lib/firebaseAdmin";
 const COLLECTION_NAME = "authLogs";
 
 type AuthLogDoc = {
-  userId: string;
+  userId?: string | null;
+  lineUserId?: string | null;
   serialCode: string;
   result: AuthResult;
   message: string;
@@ -21,6 +20,7 @@ function toEntity(id: string, doc: AuthLogDoc): AuthLogEntity {
   return {
     id,
     userId: doc.userId,
+    lineUserId: doc.lineUserId ?? null,
     serialCode: doc.serialCode,
     result: doc.result,
     message: doc.message,
@@ -35,7 +35,8 @@ export class AuthLogRepository {
   private db = getDb();
 
   async create(input: {
-    userId: string;
+    userId?: string;
+    lineUserId: string;
     serialCode: string;
     result: AuthResult;
     message: string;
@@ -44,7 +45,8 @@ export class AuthLogRepository {
     lineRequestId?: string;
   }): Promise<string> {
     const ref = await this.db.collection(COLLECTION_NAME).add({
-      userId: input.userId,
+      userId: input.userId ?? null,
+      lineUserId: input.lineUserId,
       serialCode: input.serialCode,
       result: input.result,
       message: input.message,
