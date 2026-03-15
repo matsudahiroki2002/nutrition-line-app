@@ -34,7 +34,7 @@ function resolveDescription(result: keyof typeof statusMap, lineSendStatus: stri
   }
 
   if (result === "success") {
-    return "診断結果を確認できます。必要に応じておすすめ商品の詳細もご覧ください。";
+    return "診断結果PDFを確認できます。必要に応じておすすめ商品の詳細もご覧ください。";
   }
 
   if (result === "invalid") {
@@ -64,7 +64,7 @@ export default async function ResultPage({ params }: PageProps) {
 
   const statusView = statusMap[log.result];
   const description = resolveDescription(log.result, log.lineSendStatus);
-  const canShowImage = log.result === "success" && Boolean(serial?.resultImageUrl);
+  const canShowPdf = log.result === "success" && Boolean(serial?.resultPdfUrl);
   const canShowPurchase = log.result === "success" && Boolean(serial?.purchaseLink);
 
   return (
@@ -74,15 +74,27 @@ export default async function ResultPage({ params }: PageProps) {
         <h2>{statusView.title}</h2>
         <p className={`status ${statusView.className}`}>{description}</p>
 
-        {canShowImage && (
+        {canShowPdf && (
           <div className="stack">
-            <p>診断結果</p>
-            <img src={serial?.resultImageUrl ?? ""} alt="診断結果画像" className="resultImage" />
+            <p>診断結果PDF</p>
+            <iframe
+              src={serial?.resultPdfUrl ?? ""}
+              title="診断結果PDF"
+              className="resultPdfFrame"
+            />
+            <a
+              href={serial?.resultPdfUrl ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="outlineBtn"
+            >
+              PDFを開く
+            </a>
           </div>
         )}
 
-        {log.result === "success" && !canShowImage && (
-          <p className="subtle">診断結果の表示準備中です。しばらくしてから再度お試しください。</p>
+        {log.result === "success" && !canShowPdf && (
+          <p className="subtle">診断結果PDFの表示準備中です。しばらくしてから再度お試しください。</p>
         )}
 
         {canShowPurchase && (

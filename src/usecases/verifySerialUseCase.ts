@@ -33,10 +33,10 @@ function isResultDataMissing(consumeResult: ConsumeSerialResult): boolean {
     return false;
   }
 
-  const imageUrl = consumeResult.serial.resultImageUrl;
+  const pdfUrl = consumeResult.serial.resultPdfUrl;
   const purchaseLink = consumeResult.serial.purchaseLink || env.PURCHASE_LINK_DEFAULT;
 
-  return !imageUrl || !purchaseLink;
+  return !pdfUrl || !purchaseLink;
 }
 
 export class VerifySerialUseCase {
@@ -194,7 +194,7 @@ export class VerifySerialUseCase {
     const lineResult = await lineService.sendResultBundle({
       serialCode,
       lineUserId,
-      resultImageUrl: consumeResult.serial.resultImageUrl,
+      resultPdfUrl: consumeResult.serial.resultPdfUrl,
       purchaseLink: resolvedPurchaseLink
     });
 

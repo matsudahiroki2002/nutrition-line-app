@@ -10,7 +10,7 @@ loadEnv();
 type SeedSerialRow = {
   serialCode: string;
   status: SerialStatus;
-  resultImageUrl: string;
+  resultPdfUrl: string;
   purchaseLink: string;
   targetUserUuid?: string | null;
 };

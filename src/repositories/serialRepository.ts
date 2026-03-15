@@ -7,7 +7,7 @@ const SERIALS_COLLECTION = "serials";
 type SerialDoc = {
   serialCode: string;
   status: SerialStatus;
-  resultImageUrl: string;
+  resultPdfUrl: string;
   purchaseLink: string;
   targetUserUuid?: string | null;
   usedAt?: Timestamp | null;
@@ -30,7 +30,7 @@ function toSerialEntity(id: string, doc: SerialDoc): SerialEntity {
     id,
     serialCode: doc.serialCode,
     status: doc.status,
-    resultImageUrl: doc.resultImageUrl,
+    resultPdfUrl: doc.resultPdfUrl,
     purchaseLink: doc.purchaseLink,
     targetUserUuid: doc.targetUserUuid ?? null,
     usedAt: doc.usedAt?.toDate() ?? null,
@@ -100,7 +100,7 @@ export class SerialRepository {
     serial: {
       serialCode: string;
       status: SerialStatus;
-      resultImageUrl: string;
+      resultPdfUrl: string;
       purchaseLink: string;
       targetUserUuid?: string | null;
     }
@@ -114,7 +114,7 @@ export class SerialRepository {
       const common = {
         serialCode: normalized,
         status: serial.status,
-        resultImageUrl: serial.resultImageUrl,
+        resultPdfUrl: serial.resultPdfUrl,
         purchaseLink: serial.purchaseLink,
         targetUserUuid: serial.targetUserUuid ?? null,
         usedAt: isUsed ? FieldValue.serverTimestamp() : null,

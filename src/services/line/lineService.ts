@@ -1,7 +1,7 @@
 export type SendResultBundleInput = {
   serialCode: string;
   lineUserId: string;
-  resultImageUrl: string;
+  resultPdfUrl: string;
   purchaseLink: string;
 };
 

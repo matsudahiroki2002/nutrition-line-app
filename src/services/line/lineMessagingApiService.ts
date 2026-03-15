@@ -3,17 +3,10 @@ import type { LineService, SendResultBundleInput } from "@/src/services/line/lin
 
 type LinePushBody = {
   to: string;
-  messages: Array<
-    | {
-        type: "image";
-        originalContentUrl: string;
-        previewImageUrl: string;
-      }
-    | {
-        type: "text";
-        text: string;
-      }
-  >;
+  messages: Array<{
+    type: "text";
+    text: string;
+  }>;
 };
 
 type LineErrorResponse = {
@@ -27,7 +20,6 @@ function resolvePushEndpoint(baseUrl: string): string {
 }
 
 function resolveAccessToken(rawToken: string): string {
-  // Hidden CR/LF in .env can break header creation on some runtimes.
   return rawToken.replace(/[\r\n]+/g, "").trim();
 }
 
@@ -59,13 +51,11 @@ function buildPushBody(input: SendResultBundleInput): LinePushBody {
     to: input.lineUserId,
     messages: [
       {
-        type: "image",
-        originalContentUrl: input.resultImageUrl,
-        previewImageUrl: input.resultImageUrl
-      },
-      {
         type: "text",
-        text: `診断結果をご確認ください。\nおすすめ商品: ${input.purchaseLink}`
+        text:
+          `認証が完了しました。\n` +
+          `診断結果PDF: ${input.resultPdfUrl}\n` +
+          `おすすめ商品: ${input.purchaseLink}`
       }
     ]
   };
