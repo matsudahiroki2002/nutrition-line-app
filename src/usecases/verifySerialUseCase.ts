@@ -5,6 +5,7 @@ import { UserRepository } from "@/src/repositories/userRepository";
 import { normalizeJapaneseName } from "@/src/lib/nameNormalizer";
 import { getLineService } from "@/src/services/line";
 import { env } from "@/src/lib/env";
+import type { AuthResult } from "@/src/domain/types";
 
 export type VerifySerialInput = {
   serialCode: string;
@@ -14,6 +15,7 @@ export type VerifySerialInput = {
 
 export type VerifySerialOutput = {
   logId: string;
+  result: AuthResult;
 };
 
 function normalizeSerialCode(serialCode: string): string {
@@ -55,7 +57,6 @@ export class VerifySerialUseCase {
     }
 
     const boundUser = await this.userRepository.findByLineUserId(lineUserId);
-
     const serial = await this.serialRepository.findByCode(serialCode);
 
     if (!serial) {
@@ -67,7 +68,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "invalid" };
     }
 
     if (!serial.targetUserUuid) {
@@ -79,7 +80,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "error" };
     }
 
     const targetUser = await this.userRepository.findById(serial.targetUserUuid);
@@ -93,7 +94,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "error" };
     }
 
     const normalizedStoredName = targetUser.name ? normalizeInputName(targetUser.name) : "";
@@ -108,7 +109,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "invalid" };
     }
 
     if (boundUser && boundUser.userUuid !== targetUser.userUuid) {
@@ -121,7 +122,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "invalid" };
     }
 
     let user = boundUser;
@@ -142,7 +143,7 @@ export class VerifySerialUseCase {
           lineSendStatus: "skipped"
         });
 
-        return { logId };
+        return { logId, result: "invalid" };
       }
 
       user = bindResult.user;
@@ -160,7 +161,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "invalid" };
     }
 
     if (consumeResult.kind === "used") {
@@ -173,7 +174,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "used" };
     }
 
     if (isResultDataMissing(consumeResult)) {
@@ -186,7 +187,7 @@ export class VerifySerialUseCase {
         lineSendStatus: "skipped"
       });
 
-      return { logId };
+      return { logId, result: "error" };
     }
 
     const lineService = getLineService();
@@ -210,7 +211,7 @@ export class VerifySerialUseCase {
         lineRequestId: lineResult.lineRequestId
       });
 
-      return { logId };
+      return { logId, result: "error" };
     }
 
     const logId = await this.authLogRepository.create({
@@ -223,6 +224,6 @@ export class VerifySerialUseCase {
       lineRequestId: lineResult.lineRequestId
     });
 
-    return { logId };
+    return { logId, result: "success" };
   }
 }

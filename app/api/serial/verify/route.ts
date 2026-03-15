@@ -32,7 +32,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      logId: output.logId
+      logId: output.logId,
+      result: output.result
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "server error";

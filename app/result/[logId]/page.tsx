@@ -28,9 +28,13 @@ const statusMap = {
   }
 } as const;
 
-function resolveDescription(result: keyof typeof statusMap, lineSendStatus: string): string {
+function resolveDescription(message: string, result: keyof typeof statusMap, lineSendStatus: string): string {
   if (result === "success" && lineSendStatus === "failed") {
-    return "認証は完了しましたが、LINE通知の送信に失敗しました。時間をおいて再度お試しください。";
+    return message || "認証は完了しましたが、LINE通知の送信に失敗しました。時間をおいて再度お試しください。";
+  }
+
+  if (message) {
+    return message;
   }
 
   if (result === "success") {
@@ -38,7 +42,7 @@ function resolveDescription(result: keyof typeof statusMap, lineSendStatus: stri
   }
 
   if (result === "invalid") {
-    return "氏名またはシリアルIDが一致しません。入力内容をご確認ください。";
+    return "認証できませんでした。入力内容をご確認ください。";
   }
 
   if (result === "used") {
@@ -63,7 +67,7 @@ export default async function ResultPage({ params }: PageProps) {
   const serial = await serialRepository.findByCode(log.serialCode);
 
   const statusView = statusMap[log.result];
-  const description = resolveDescription(log.result, log.lineSendStatus);
+  const description = resolveDescription(log.message, log.result, log.lineSendStatus);
   const canShowPdf = log.result === "success" && Boolean(serial?.resultPdfUrl);
   const canShowPurchase = log.result === "success" && Boolean(serial?.purchaseLink);
 
@@ -105,7 +109,7 @@ export default async function ResultPage({ params }: PageProps) {
 
         <div className="footerLinks">
           <Link href="/serial" className="outlineBtn">
-            もう一度入力する
+            再試行する
           </Link>
         </div>
       </div>

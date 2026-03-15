@@ -7,6 +7,7 @@ import { closeLiffWindowIfPossible, createLineIdentityService } from "@/src/serv
 type VerifyApiResponse = {
   ok: boolean;
   logId?: string;
+  result?: "success" | "invalid" | "used" | "error";
   message?: string;
 };
 
@@ -38,7 +39,6 @@ export default function SerialPage() {
       if (result.lineUserId) {
         setLineUserId(result.lineUserId);
       }
-
     }
 
     void resolveIdentity();
@@ -84,11 +84,11 @@ export default function SerialPage() {
 
       const data = (await response.json()) as VerifyApiResponse;
 
-      if (!response.ok || !data.ok || !data.logId) {
+      if (!response.ok || !data.ok || !data.logId || !data.result) {
         throw new Error(data.message ?? "認証処理に失敗しました。");
       }
 
-      if (closeLiffWindowIfPossible()) {
+      if (data.result === "success" && closeLiffWindowIfPossible()) {
         return;
       }
 
@@ -114,7 +114,7 @@ export default function SerialPage() {
             <input
               id="name"
               className="input"
-              placeholder="例: 鈴木太郎"
+              placeholder="例: 佐藤太郎"
               value={name}
               onChange={(event) => setName(event.target.value)}
               autoComplete="name"
