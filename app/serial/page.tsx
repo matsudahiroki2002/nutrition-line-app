@@ -114,7 +114,7 @@ export default function SerialPage() {
             <input
               id="name"
               className="input"
-              placeholder="例: 松田太郎"
+              placeholder="例: 竹森太郎"
               value={name}
               onChange={(event) => setName(event.target.value)}
               autoComplete="name"
