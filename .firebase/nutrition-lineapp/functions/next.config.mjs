@@ -1,8 +1,8 @@
 // next.config.mjs
+import path from "node:path";
 var nextConfig = {
-  experimental: {
-    typedRoutes: true
-  }
+  typedRoutes: true,
+  outputFileTracingRoot: path.resolve()
 };
 var next_config_default = nextConfig;
 export {

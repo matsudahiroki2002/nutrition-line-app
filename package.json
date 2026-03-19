@@ -7,9 +7,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "seed": "npm run seed:users && npm run seed:serials",
-    "seed:users": "tsx -r tsconfig-paths/register scripts/seedUsers.ts",
-    "seed:serials": "tsx -r tsconfig-paths/register scripts/seedSerials.ts"
+    "seed": "npm run seed:reports",
+    "seed:reports": "tsx -r tsconfig-paths/register scripts/seedReports.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

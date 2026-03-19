@@ -1,0 +1,41 @@
+[
+  {
+    "birthday": "1992-04-15",
+    "userName": "守屋大地",
+    "serialId": "M0R1Y1",
+    "purchaseUrl": "https://example.com/supplement/moriya",
+    "storagePath": "reports/moriya/m0r1y1/result.pdf",
+    "resultPdfUrl": "https://example.com/reports/moriya-m0r1y1.pdf",
+    "lineRegistrationFlag": false,
+    "pdfSendFlag": false,
+    "lineUserId": null,
+    "pdfClickedFlag": false,
+    "urlClickedFlag": false
+  },
+  {
+    "birthday": "1989-11-03",
+    "userName": "青木健太郎",
+    "serialId": "A0K1T2",
+    "purchaseUrl": "https://example.com/supplement/aoki",
+    "storagePath": "reports/aoki/a0k1t2/result.pdf",
+    "resultPdfUrl": "https://example.com/reports/aoki-a0k1t2.pdf",
+    "lineRegistrationFlag": false,
+    "pdfSendFlag": false,
+    "lineUserId": null,
+    "pdfClickedFlag": false,
+    "urlClickedFlag": false
+  },
+  {
+    "birthday": "1996-07-22",
+    "userName": "松田大喜",
+    "serialId": "M2T5D9",
+    "purchaseUrl": "https://example.com/supplement/matsuda",
+    "storagePath": "reports/matsuda/m2t5d9/result.pdf",
+    "resultPdfUrl": "https://example.com/reports/matsuda-m2t5d9.pdf",
+    "lineRegistrationFlag": false,
+    "pdfSendFlag": false,
+    "lineUserId": null,
+    "pdfClickedFlag": false,
+    "urlClickedFlag": false
+  }
+]

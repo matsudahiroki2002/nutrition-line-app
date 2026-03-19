@@ -54,8 +54,9 @@ function buildPushBody(input: SendResultBundleInput): LinePushBody {
         type: "text",
         text:
           `認証が完了しました。\n` +
+          `シリアルID: ${input.serialId}\n` +
           `診断結果PDF: ${input.resultPdfUrl}\n` +
-          `おすすめ商品: ${input.purchaseLink}`
+          `おすすめ商品: ${input.purchaseUrl}`
       }
     ]
   };

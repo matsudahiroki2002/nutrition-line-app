@@ -3,9 +3,9 @@ import { z } from "zod";
 import { VerifySerialUseCase } from "@/src/usecases/verifySerialUseCase";
 
 const requestSchema = z.object({
-  serialCode: z.string().min(1, "serialCode is required"),
+  serialId: z.string().regex(/^[A-Za-z0-9]{6}$/, "serialId must be 6 alphanumeric chars"),
   lineUserId: z.string().min(1, "lineUserId is required"),
-  name: z.string().trim().min(1, "name is required").max(80)
+  userName: z.string().trim().min(1, "userName is required").max(80)
 });
 
 export async function POST(request: Request) {
@@ -25,15 +25,29 @@ export async function POST(request: Request) {
 
     const useCase = new VerifySerialUseCase();
     const output = await useCase.execute({
-      serialCode: parsed.data.serialCode,
+      serialId: parsed.data.serialId,
       lineUserId: parsed.data.lineUserId,
-      name: parsed.data.name
+      userName: parsed.data.userName
     });
+
+    if (output.result !== "success") {
+      const status = output.result === "invalid" ? 400 : 409;
+      return NextResponse.json(
+        {
+          ok: false,
+          result: output.result,
+          message: output.message,
+          reportId: output.reportId
+        },
+        { status }
+      );
+    }
 
     return NextResponse.json({
       ok: true,
-      logId: output.logId,
-      result: output.result
+      reportId: output.reportId,
+      result: output.result,
+      message: output.message
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "server error";
