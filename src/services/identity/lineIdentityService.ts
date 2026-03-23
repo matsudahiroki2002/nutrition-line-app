@@ -31,6 +31,20 @@ declare global {
 }
 
 const LIFF_SDK_URL = "https://static.line-scdn.net/liff/edge/2/sdk.js";
+const AUTO_LOGIN_GUARD_KEY = "nutrition-line:liff-login-attempt";
+const AUTO_LOGIN_GUARD_WINDOW_MS = 15_000;
+const LIFF_TRANSIENT_QUERY_KEYS = [
+  "access_token",
+  "code",
+  "client_id",
+  "friendship_status_changed",
+  "id_token",
+  "liff.state",
+  "liffClientId",
+  "liffRedirectUri",
+  "redirect_uri",
+  "state"
+];
 
 let liffLoadPromise: Promise<void> | null = null;
 
@@ -79,6 +93,80 @@ function loadLiffSdk(): Promise<void> {
   return liffLoadPromise;
 }
 
+function buildStableRedirectUri(): string {
+  const currentUrl = new URL(window.location.href);
+
+  for (const key of LIFF_TRANSIENT_QUERY_KEYS) {
+    currentUrl.searchParams.delete(key);
+  }
+
+  currentUrl.hash = "";
+
+  return currentUrl.toString();
+}
+
+function canTriggerAutoLogin(redirectUri: string): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const rawAttempt = window.sessionStorage.getItem(AUTO_LOGIN_GUARD_KEY);
+
+  if (!rawAttempt) {
+    return true;
+  }
+
+  try {
+    const parsed = JSON.parse(rawAttempt) as { redirectUri?: string; timestamp?: number };
+
+    if (
+      parsed.redirectUri === redirectUri &&
+      typeof parsed.timestamp === "number" &&
+      Date.now() - parsed.timestamp < AUTO_LOGIN_GUARD_WINDOW_MS
+    ) {
+      return false;
+    }
+  } catch {
+    window.sessionStorage.removeItem(AUTO_LOGIN_GUARD_KEY);
+  }
+
+  return true;
+}
+
+function markAutoLoginAttempt(redirectUri: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    AUTO_LOGIN_GUARD_KEY,
+    JSON.stringify({
+      redirectUri,
+      timestamp: Date.now()
+    })
+  );
+}
+
+function clearAutoLoginAttempt() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(AUTO_LOGIN_GUARD_KEY);
+}
+
+function cleanupTransientUrlState(redirectUri: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (window.location.href === redirectUri) {
+    return;
+  }
+
+  window.history.replaceState(window.history.state, "", redirectUri);
+}
+
 class LiffLineIdentityService implements LineIdentityService {
   constructor(private readonly liffId: string) {}
 
@@ -101,7 +189,18 @@ class LiffLineIdentityService implements LineIdentityService {
       await window.liff.init({ liffId: this.liffId });
 
       if (!window.liff.isLoggedIn()) {
-        window.liff.login({ redirectUri: window.location.href });
+        const redirectUri = buildStableRedirectUri();
+
+        if (!canTriggerAutoLogin(redirectUri)) {
+          return {
+            lineUserId: null,
+            displayName: null,
+            message: "LINEログインの確認でループが発生しました。LINE内ブラウザで開き直してください。"
+          };
+        }
+
+        markAutoLoginAttempt(redirectUri);
+        window.liff.login({ redirectUri });
         return {
           lineUserId: null,
           displayName: null,
@@ -110,6 +209,10 @@ class LiffLineIdentityService implements LineIdentityService {
       }
 
       const profile = await window.liff.getProfile();
+      const redirectUri = buildStableRedirectUri();
+
+      clearAutoLoginAttempt();
+      cleanupTransientUrlState(redirectUri);
 
       return {
         lineUserId: profile.userId,

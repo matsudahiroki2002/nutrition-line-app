@@ -93,10 +93,8 @@ export class VerifySerialUseCase {
 
     const lineService = getLineService();
     const lineResult = await lineService.sendResultBundle({
-      serialId,
-      lineUserId,
-      resultPdfUrl: report.resultPdfUrl,
-      purchaseUrl: resolvedPurchaseUrl
+      reportId: report.id,
+      lineUserId
     });
 
     if (!lineResult.ok) {

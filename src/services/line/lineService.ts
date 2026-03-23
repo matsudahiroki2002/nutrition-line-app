@@ -1,8 +1,6 @@
 export type SendResultBundleInput = {
-  serialId: string;
+  reportId: string;
   lineUserId: string;
-  resultPdfUrl: string;
-  purchaseUrl: string;
 };
 
 export type LineSendResult = {

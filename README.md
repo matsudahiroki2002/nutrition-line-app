@@ -120,6 +120,9 @@
 - `PURCHASE_LINK_DEFAULT`
 - `IMAGE_PLACEHOLDER_URL`
 
+補足:
+- LINE の通知画像とリンク導線には、`APP_BASE_URL` が外部公開された `https://...` である必要があります。
+
 ## 7. 起動手順
 
 ```bash
@@ -141,4 +144,3 @@ npm run seed
 ```bash
 npm run seed:reports
 ```
-

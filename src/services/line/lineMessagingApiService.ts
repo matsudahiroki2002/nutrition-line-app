@@ -1,12 +1,10 @@
 import { env } from "@/src/lib/env";
+import { buildResultBundleFlexMessages, type LineFlexMessage } from "@/src/services/line/lineFlexMessage";
 import type { LineService, SendResultBundleInput } from "@/src/services/line/lineService";
 
 type LinePushBody = {
   to: string;
-  messages: Array<{
-    type: "text";
-    text: string;
-  }>;
+  messages: LineFlexMessage[];
 };
 
 type LineErrorResponse = {
@@ -49,16 +47,7 @@ function normalizeLineErrorCode(status: number): string {
 function buildPushBody(input: SendResultBundleInput): LinePushBody {
   return {
     to: input.lineUserId,
-    messages: [
-      {
-        type: "text",
-        text:
-          `認証が完了しました。\n` +
-          `シリアルID: ${input.serialId}\n` +
-          `診断結果PDF: ${input.resultPdfUrl}\n` +
-          `おすすめ商品: ${input.purchaseUrl}`
-      }
-    ]
+    messages: buildResultBundleFlexMessages(input.reportId)
   };
 }
 
@@ -66,6 +55,22 @@ export class LineMessagingApiService implements LineService {
   async sendResultBundle(input: SendResultBundleInput) {
     let response: Response;
     let lineRequestId: string | undefined;
+    let pushBody: LinePushBody;
+
+    try {
+      pushBody = buildPushBody(input);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "LINE message payload generation failed";
+
+      return {
+        ok: false,
+        provider: "line" as const,
+        status: "failed" as const,
+        message: `LINE Messaging API payload error: ${message}`,
+        lineErrorCode: "invalid_payload",
+        lineRequestId
+      };
+    }
 
     try {
       response = await fetch(resolvePushEndpoint(env.LINE_API_BASE_URL), {
@@ -74,7 +79,7 @@ export class LineMessagingApiService implements LineService {
           "Content-Type": "application/json",
           Authorization: `Bearer ${resolveAccessToken(env.LINE_CHANNEL_ACCESS_TOKEN)}`
         },
-        body: JSON.stringify(buildPushBody(input))
+        body: JSON.stringify(pushBody)
       });
       lineRequestId = response.headers.get("x-line-request-id") ?? undefined;
     } catch (error) {

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import SerialPage from "@/app/serial/page";
 
 export default function HomePage() {
-  redirect("/serial");
+  return <SerialPage />;
 }
