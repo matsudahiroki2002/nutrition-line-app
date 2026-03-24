@@ -62,27 +62,34 @@ type LineFlexComponent =
       gravity?: string;
     };
 
-export type LineFlexMessage = {
-  type: "flex";
-  altText: string;
-  contents: {
-    type: "bubble";
-    size?: "nano" | "micro" | "deca" | "hecto" | "kilo" | "mega" | "giga";
-    hero?: Extract<LineFlexComponent, { type: "image" }>;
-    body?: Extract<LineFlexComponent, { type: "box" }>;
-    footer?: Extract<LineFlexComponent, { type: "box" }>;
-    styles?: {
-      hero?: { backgroundColor?: string };
-      body?: { backgroundColor?: string };
-      footer?: { backgroundColor?: string; separator?: boolean };
-    };
+type LineFlexBubble = {
+  type: "bubble";
+  size?: "nano" | "micro" | "deca" | "hecto" | "kilo" | "mega" | "giga";
+  hero?: Extract<LineFlexComponent, { type: "image" }>;
+  body?: Extract<LineFlexComponent, { type: "box" }>;
+  footer?: Extract<LineFlexComponent, { type: "box" }>;
+  styles?: {
+    hero?: { backgroundColor?: string };
+    body?: { backgroundColor?: string };
+    footer?: { backgroundColor?: string; separator?: boolean };
   };
 };
 
+export type LineFlexMessage = {
+  type: "flex";
+  altText: string;
+  contents:
+    | LineFlexBubble
+    | {
+        type: "carousel";
+        contents: LineFlexBubble[];
+      };
+};
+
 const flexSourceImageUrls: Record<LineFlexImageKind, string> = {
-  pdf: "https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2Fpdf-base.png?alt=media&token=4b3d80ef-02ad-47c4-b1e4-607ec359aeaf",
+  pdf: "<https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2Fpdf-base.png?alt=media&token=4b3d80ef-02ad-47c4-b1e4-607ec359aeaf>",
   purchase:
-    "https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2Fpurchase-base.png?alt=media&token=dc90a7d0-46b6-4520-989a-9d05dac53d50"
+    "<https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2Fpurchase-base.png?alt=media&token=dc90a7d0-46b6-4520-989a-9d05dac53d50>"
 };
 
 function normalizeAppBaseUrl(): string {
@@ -122,158 +129,159 @@ function buildHero(kind: LineFlexImageKind, uri: string): Extract<LineFlexCompon
   };
 }
 
-function buildPdfFlexMessage(reportId: string): LineFlexMessage {
+function buildPdfBubble(reportId: string): LineFlexBubble {
   const uri = buildTrackedLinkUrl(reportId, "pdf");
 
   return {
-    type: "flex",
-    altText: "診断結果PDFを開く",
-    contents: {
-      type: "bubble",
-      size: "mega",
-      hero: buildHero("pdf", uri),
-      body: {
-        type: "box",
-        layout: "vertical",
-        paddingAll: "22px",
-        spacing: "md",
-        contents: [
-          {
-            type: "box",
-            layout: "baseline",
-            contents: [
-              {
-                type: "text",
-                text: "RESULT PDF",
-                size: "xs",
-                weight: "bold",
-                color: "#2E6B53"
-              }
-            ]
-          },
-          {
-            type: "text",
-            text: "診断結果を確認する",
-            size: "xl",
-            weight: "bold",
-            color: "#173728",
-            wrap: true
-          },
-          {
-            type: "text",
-            text: "認証完了後すぐにPDFを開けます。タップして内容を確認してください。",
-            size: "sm",
-            color: "#5D6B63",
-            wrap: true
-          }
-        ]
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        paddingTop: "0px",
-        paddingBottom: "20px",
-        paddingStart: "22px",
-        paddingEnd: "22px",
-        contents: [
-          {
-            type: "button",
-            style: "primary",
-            color: "#2E6B53",
-            height: "md",
-            action: {
-              type: "uri",
-              label: "PDFを見る",
-              uri
+    type: "bubble",
+    size: "mega",
+    hero: buildHero("pdf", uri),
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "22px",
+      spacing: "md",
+      contents: [
+        {
+          type: "box",
+          layout: "baseline",
+          contents: [
+            {
+              type: "text",
+              text: "RESULT PDF",
+              size: "xs",
+              weight: "bold",
+              color: "#2E6B53"
             }
+          ]
+        },
+        {
+          type: "text",
+          text: "診断結果を確認する",
+          size: "xl",
+          weight: "bold",
+          color: "#173728",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: "認証完了後すぐにPDFを開けます。タップして内容を確認してください。",
+          size: "sm",
+          color: "#5D6B63",
+          wrap: true
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingTop: "0px",
+      paddingBottom: "20px",
+      paddingStart: "22px",
+      paddingEnd: "22px",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#2E6B53",
+          height: "md",
+          action: {
+            type: "uri",
+            label: "PDFを見る",
+            uri
           }
-        ]
-      },
-      styles: {
-        body: { backgroundColor: "#F7FBF8" },
-        footer: { backgroundColor: "#F7FBF8" }
-      }
+        }
+      ]
+    },
+    styles: {
+      body: { backgroundColor: "#F7FBF8" },
+      footer: { backgroundColor: "#F7FBF8" }
     }
   };
 }
 
-function buildPurchaseFlexMessage(reportId: string): LineFlexMessage {
+function buildPurchaseBubble(reportId: string): LineFlexBubble {
   const uri = buildTrackedLinkUrl(reportId, "purchase");
 
   return {
-    type: "flex",
-    altText: "おすすめ商品を確認する",
-    contents: {
-      type: "bubble",
-      size: "mega",
-      hero: buildHero("purchase", uri),
-      body: {
-        type: "box",
-        layout: "vertical",
-        paddingAll: "22px",
-        spacing: "md",
-        contents: [
-          {
-            type: "box",
-            layout: "baseline",
-            contents: [
-              {
-                type: "text",
-                text: "RECOMMEND",
-                size: "xs",
-                weight: "bold",
-                color: "#8E4D2B"
-              }
-            ]
-          },
-          {
-            type: "text",
-            text: "おすすめ商品を確認する",
-            size: "xl",
-            weight: "bold",
-            color: "#4D2A18",
-            wrap: true
-          },
-          {
-            type: "text",
-            text: "診断結果に合わせた購入導線をすぐ開けます。気になる商品をそのままチェックできます。",
-            size: "sm",
-            color: "#706056",
-            wrap: true
-          }
-        ]
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        paddingTop: "0px",
-        paddingBottom: "20px",
-        paddingStart: "22px",
-        paddingEnd: "22px",
-        contents: [
-          {
-            type: "button",
-            style: "primary",
-            color: "#C9703C",
-            height: "md",
-            action: {
-              type: "uri",
-              label: "商品を見る",
-              uri
+    type: "bubble",
+    size: "mega",
+    hero: buildHero("purchase", uri),
+    body: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "22px",
+      spacing: "md",
+      contents: [
+        {
+          type: "box",
+          layout: "baseline",
+          contents: [
+            {
+              type: "text",
+              text: "RECOMMEND",
+              size: "xs",
+              weight: "bold",
+              color: "#8E4D2B"
             }
+          ]
+        },
+        {
+          type: "text",
+          text: "おすすめ商品を確認する",
+          size: "xl",
+          weight: "bold",
+          color: "#4D2A18",
+          wrap: true
+        },
+        {
+          type: "text",
+          text: "診断結果に合わせた購入導線をすぐ開けます。気になる商品をそのままチェックできます。",
+          size: "sm",
+          color: "#706056",
+          wrap: true
+        }
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingTop: "0px",
+      paddingBottom: "20px",
+      paddingStart: "22px",
+      paddingEnd: "22px",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: "#C9703C",
+          height: "md",
+          action: {
+            type: "uri",
+            label: "商品を見る",
+            uri
           }
-        ]
-      },
-      styles: {
-        body: { backgroundColor: "#FFF8F3" },
-        footer: { backgroundColor: "#FFF8F3" }
-      }
+        }
+      ]
+    },
+    styles: {
+      body: { backgroundColor: "#FFF8F3" },
+      footer: { backgroundColor: "#FFF8F3" }
     }
   };
 }
 
 export function buildResultBundleFlexMessages(reportId: string): LineFlexMessage[] {
-  return [buildPdfFlexMessage(reportId), buildPurchaseFlexMessage(reportId)];
+  return [
+    {
+      type: "flex",
+      altText: "診断結果とおすすめ商品を確認する",
+      contents: {
+        type: "carousel",
+        contents: [buildPdfBubble(reportId), buildPurchaseBubble(reportId)]
+      }
+    }
+  ];
 }
 
 export function isLineResultLinkTarget(value: string): value is LineResultLinkTarget {
