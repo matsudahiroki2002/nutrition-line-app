@@ -87,9 +87,9 @@ export type LineFlexMessage = {
 };
 
 const flexSourceImageUrls: Record<LineFlexImageKind, string> = {
-  pdf: "<https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2Fpdf-base.png?alt=media&token=4b3d80ef-02ad-47c4-b1e4-607ec359aeaf>",
+  pdf: "https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2FResult_btn2603.png?alt=media&token=2bd93900-c320-4823-b2db-dd3d1337e6b4",
   purchase:
-    "<https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2Fpurchase-base.png?alt=media&token=dc90a7d0-46b6-4520-989a-9d05dac53d50>"
+    "https://firebasestorage.googleapis.com/v0/b/nutrition-lineapp.firebasestorage.app/o/line%2Fimagemap%2FBuy_btn2603_ver2.png?alt=media&token=f4173d84-c984-4235-9637-c46f4e7eff5f"
 };
 
 function normalizeAppBaseUrl(): string {

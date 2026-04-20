@@ -5,6 +5,7 @@ export type ReportEntity = {
   createdAt: Date;
   birthday: string;
   userName: string;
+  userNameNormalized: string;
   serialId: string;
   purchaseUrl: string;
   storagePath: string;

@@ -1,6 +1,9 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getDb } from "@/src/lib/firebaseAdmin";
+import { normalizeJapaneseName } from "@/src/lib/nameNormalizer";
 import type { ReportEntity } from "@/src/domain/types";
+
+
 
 const REPORTS_COLLECTION = "reports";
 const SERIAL_ID_PATTERN = /^[A-Za-z0-9]{6}$/;
@@ -9,6 +12,7 @@ type ReportDoc = {
   createdAt: Timestamp;
   birthday: string;
   userName: string;
+  userNameNormalized?: string;
   serialId: string;
   purchaseUrl: string;
   storagePath: string;
@@ -20,6 +24,7 @@ type ReportDoc = {
   urlClickedFlag?: boolean;
   updatedAt: Timestamp;
 };
+
 
 export type BindLineUserIdResult =
   | { kind: "bound"; report: ReportEntity }
@@ -49,6 +54,7 @@ function toReportEntity(id: string, doc: Partial<ReportDoc>): ReportEntity {
     createdAt: toDate(doc.createdAt, now),
     birthday: sanitizeString(doc.birthday),
     userName: sanitizeString(doc.userName),
+    userNameNormalized: sanitizeString(doc.userNameNormalized),
     serialId: sanitizeString(doc.serialId),
     purchaseUrl: sanitizeString(doc.purchaseUrl),
     storagePath: sanitizeString(doc.storagePath),
@@ -62,9 +68,11 @@ function toReportEntity(id: string, doc: Partial<ReportDoc>): ReportEntity {
   };
 }
 
+
 function normalizeUserName(userName: string): string {
-  return userName.trim();
+  return normalizeJapaneseName(userName);
 }
+
 
 function normalizeSerialId(serialId: string): string {
   return serialId.trim();
@@ -92,26 +100,30 @@ export class ReportRepository {
     return toReportEntity(snapshot.id, snapshot.data() as ReportDoc);
   }
 
-  async findByUserNameAndSerialId(input: { userName: string; serialId: string }): Promise<ReportEntity[]> {
-    const userName = normalizeUserName(input.userName);
-    const serialId = normalizeSerialId(input.serialId);
+  async findByUserNameNormalizedAndSerialId(input: {
+  userNameNormalized: string;
+  serialId: string;
+}): Promise<ReportEntity[]> {
+  const userNameNormalized = normalizeUserName(input.userNameNormalized);
+  const serialId = normalizeSerialId(input.serialId);
 
-    if (!userName || !serialId) {
-      return [];
-    }
-
-    const snapshot = await this.db
-      .collection(REPORTS_COLLECTION)
-      .where("userName", "==", userName)
-      .where("serialId", "==", serialId)
-      .get();
-
-    if (snapshot.empty) {
-      return [];
-    }
-
-    return snapshot.docs.map((doc) => toReportEntity(doc.id, doc.data() as ReportDoc));
+  if (!userNameNormalized || !serialId) {
+    return [];
   }
+
+  const snapshot = await this.db
+    .collection(REPORTS_COLLECTION)
+    .where("userNameNormalized", "==", userNameNormalized)
+    .where("serialId", "==", serialId)
+    .get();
+
+  if (snapshot.empty) {
+    return [];
+  }
+
+  return snapshot.docs.map((doc) => toReportEntity(doc.id, doc.data() as ReportDoc));
+}
+
 
   async bindLineUserIdOnFirstAuth(input: { reportId: string; lineUserId: string }): Promise<BindLineUserIdResult> {
     const reportId = input.reportId.trim();
@@ -202,58 +214,62 @@ export class ReportRepository {
     await this.updateFlags(reportId, { urlClickedFlag: true });
   }
 
+
   async upsertSeed(report: {
-    birthday: string;
-    userName: string;
-    serialId: string;
-    purchaseUrl: string;
-    storagePath: string;
-    resultPdfUrl: string;
-    lineRegistrationFlag?: boolean;
-    pdfSendFlag?: boolean;
-    lineUserId?: string | null;
-    pdfClickedFlag?: boolean;
-    urlClickedFlag?: boolean;
-  }): Promise<void> {
-    const birthday = report.birthday.trim();
-    const userName = normalizeUserName(report.userName);
-    const serialId = normalizeSerialId(report.serialId);
-    const lineUserId = report.lineUserId?.trim() || null;
+  birthday: string;
+  userName: string;
+  serialId: string;
+  purchaseUrl: string;
+  storagePath: string;
+  resultPdfUrl: string;
+  lineRegistrationFlag?: boolean;
+  pdfSendFlag?: boolean;
+  lineUserId?: string | null;
+  pdfClickedFlag?: boolean;
+  urlClickedFlag?: boolean;
+}): Promise<void> {
+  const birthday = report.birthday.trim();
+  const userName = report.userName.trim();
+  const userNameNormalized = normalizeUserName(report.userName);
+  const serialId = normalizeSerialId(report.serialId);
+  const lineUserId = report.lineUserId?.trim() || null;
 
-    if (!birthday || !userName || !serialId || !isValidSerialId(serialId)) {
-      throw new Error("Invalid report seed row: birthday, userName and serialId(6 alphanumeric chars) are required");
-    }
-
-    const matches = await this.findByUserNameAndSerialId({ userName, serialId });
-    if (matches.length > 1) {
-      throw new Error(`Duplicate userName+serialId already exists in reports: ${userName}/${serialId}`);
-    }
-
-    const payload = {
-      birthday,
-      userName,
-      serialId,
-      purchaseUrl: report.purchaseUrl.trim(),
-      storagePath: report.storagePath.trim(),
-      resultPdfUrl: report.resultPdfUrl.trim(),
-      lineRegistrationFlag: report.lineRegistrationFlag ?? Boolean(lineUserId),
-      pdfSendFlag: report.pdfSendFlag ?? false,
-      lineUserId,
-      pdfClickedFlag: report.pdfClickedFlag ?? false,
-      urlClickedFlag: report.urlClickedFlag ?? false,
-      updatedAt: FieldValue.serverTimestamp()
-    };
-
-    if (matches.length === 1) {
-      await this.db.collection(REPORTS_COLLECTION).doc(matches[0].id).set(payload, { merge: true });
-      return;
-    }
-
-    await this.db.collection(REPORTS_COLLECTION).add({
-      ...payload,
-      createdAt: FieldValue.serverTimestamp()
-    });
+  if (!birthday || !userName || !userNameNormalized || !serialId || !isValidSerialId(serialId)) {
+    throw new Error("Invalid report seed row: birthday, userName and serialId(6 alphanumeric chars) are required");
   }
+
+  const matches = await this.findByUserNameNormalizedAndSerialId({ userNameNormalized, serialId });
+  if (matches.length > 1) {
+    throw new Error(`Duplicate userNameNormalized+serialId already exists in reports: ${userNameNormalized}/${serialId}`);
+  }
+
+  const payload = {
+    birthday,
+    userName,
+    userNameNormalized,
+    serialId,
+    purchaseUrl: report.purchaseUrl.trim(),
+    storagePath: report.storagePath.trim(),
+    resultPdfUrl: report.resultPdfUrl.trim(),
+    lineRegistrationFlag: report.lineRegistrationFlag ?? Boolean(lineUserId),
+    pdfSendFlag: report.pdfSendFlag ?? false,
+    lineUserId,
+    pdfClickedFlag: report.pdfClickedFlag ?? false,
+    urlClickedFlag: report.urlClickedFlag ?? false,
+    updatedAt: FieldValue.serverTimestamp()
+  };
+
+  if (matches.length === 1) {
+    await this.db.collection(REPORTS_COLLECTION).doc(matches[0].id).set(payload, { merge: true });
+    return;
+  }
+
+  await this.db.collection(REPORTS_COLLECTION).add({
+    ...payload,
+    createdAt: FieldValue.serverTimestamp()
+  });
+}
+
 
   private async updateFlags(
     reportId: string,

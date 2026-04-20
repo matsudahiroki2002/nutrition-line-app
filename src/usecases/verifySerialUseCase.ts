@@ -1,6 +1,7 @@
 import { ReportRepository, isValidSerialId } from "@/src/repositories/reportRepository";
 import { getLineService } from "@/src/services/line";
 import { env } from "@/src/lib/env";
+import { normalizeJapaneseName } from "@/src/lib/nameNormalizer";
 import type { AuthResult } from "@/src/domain/types";
 
 export type VerifySerialInput = {
@@ -24,8 +25,9 @@ function normalizeUserId(lineUserId: string): string {
 }
 
 function normalizeUserName(userName: string): string {
-  return userName.trim();
+  return normalizeJapaneseName(userName);
 }
+
 
 export class VerifySerialUseCase {
   private reportRepository = new ReportRepository();
@@ -46,7 +48,12 @@ export class VerifySerialUseCase {
       };
     }
 
-    const reports = await this.reportRepository.findByUserNameAndSerialId({ userName, serialId });
+    const reports = await this.reportRepository.findByUserNameNormalizedAndSerialId({
+  userNameNormalized: userName,
+  serialId
+});
+
+
 
     if (reports.length === 0) {
       return {
