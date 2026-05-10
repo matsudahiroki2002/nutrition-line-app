@@ -131,6 +131,42 @@ npm run seed
 npm run dev
 ```
 
+## Docker での開発
+
+### 前提
+- Docker Desktop がインストール済みであること
+
+### 初回セットアップ
+
+```bash
+cp .env.example .env
+docker compose build
+docker compose run --rm app npm ci
+```
+
+### 起動
+
+```bash
+docker compose up
+```
+
+### seed データ投入
+
+```bash
+docker compose run --rm app npm run seed
+```
+
+### 停止
+
+```bash
+docker compose down
+```
+
+### 補足
+- アプリは `http://localhost:3000` で確認できます
+- 開発時の依存関係はコンテナ内の `node_modules` volume を使用します
+- 環境変数は `.env.example` をコピーして `.env` を作成してください
+
 ## 8. seedデータ投入
 
 `reports` を投入:
