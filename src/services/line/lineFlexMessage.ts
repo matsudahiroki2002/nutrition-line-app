@@ -121,8 +121,8 @@ function buildHero(kind: LineFlexImageKind, uri: string): Extract<LineFlexCompon
     type: "image",
     url: buildFlexImageUrl(kind),
     size: "full",
-    aspectRatio: "20:13",
-    aspectMode: "cover",
+    aspectRatio: "20:20",
+    aspectMode: "fit",
     action: {
       type: "uri",
       uri
@@ -135,13 +135,13 @@ function buildPdfBubble(reportId: string): LineFlexBubble {
 
   return {
     type: "bubble",
-    size: "kilo",
+    size: "micro",
     hero: buildHero("pdf", uri),
     body: {
       type: "box",
       layout: "vertical",
-      paddingAll: "14px",
-      spacing: "sm",
+      paddingAll: "12px",
+      spacing: "xs",
       contents: [
         {
           type: "text",
@@ -153,18 +153,19 @@ function buildPdfBubble(reportId: string): LineFlexBubble {
         {
           type: "text",
           text: "診断結果を確認",
-          size: "md",
+          size: "sm",
           weight: "bold",
           color: "#173728",
-          wrap: true
+          wrap: true,
+          maxLines: 1
         },
         {
           type: "text",
-          text: "PDFで内容を確認できます。",
-          size: "xs",
+          text: "PDFで確認できます。",
+          size: "xxs",
           color: "#5D6B63",
           wrap: true,
-          maxLines: 2
+          maxLines: 1
         }
       ]
     },
@@ -172,9 +173,9 @@ function buildPdfBubble(reportId: string): LineFlexBubble {
       type: "box",
       layout: "vertical",
       paddingTop: "0px",
-      paddingBottom: "14px",
-      paddingStart: "14px",
-      paddingEnd: "14px",
+      paddingBottom: "12px",
+      paddingStart: "12px",
+      paddingEnd: "12px",
       contents: [
         {
           type: "button",
@@ -201,13 +202,13 @@ function buildPurchaseBubble(reportId: string): LineFlexBubble {
 
   return {
     type: "bubble",
-    size: "kilo",
+    size: "micro",
     hero: buildHero("purchase", uri),
     body: {
       type: "box",
       layout: "vertical",
-      paddingAll: "14px",
-      spacing: "sm",
+      paddingAll: "12px",
+      spacing: "xs",
       contents: [
         {
           type: "text",
@@ -219,18 +220,19 @@ function buildPurchaseBubble(reportId: string): LineFlexBubble {
         {
           type: "text",
           text: "おすすめ商品を確認",
-          size: "md",
+          size: "sm",
           weight: "bold",
           color: "#4D2A18",
-          wrap: true
+          wrap: true,
+          maxLines: 1
         },
         {
           type: "text",
-          text: "商品をそのまま確認できます。",
-          size: "xs",
+          text: "商品を確認できます。",
+          size: "xxs",
           color: "#706056",
           wrap: true,
-          maxLines: 2
+          maxLines: 1
         }
       ]
     },
@@ -238,9 +240,9 @@ function buildPurchaseBubble(reportId: string): LineFlexBubble {
       type: "box",
       layout: "vertical",
       paddingTop: "0px",
-      paddingBottom: "14px",
-      paddingStart: "14px",
-      paddingEnd: "14px",
+      paddingBottom: "12px",
+      paddingStart: "12px",
+      paddingEnd: "12px",
       contents: [
         {
           type: "button",
