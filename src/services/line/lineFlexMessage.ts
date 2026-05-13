@@ -28,6 +28,7 @@ type LineFlexComponent =
       size?: string;
       color?: string;
       wrap?: boolean;
+      maxLines?: number;
       margin?: string;
       flex?: number;
     }
@@ -120,7 +121,7 @@ function buildHero(kind: LineFlexImageKind, uri: string): Extract<LineFlexCompon
     type: "image",
     url: buildFlexImageUrl(kind),
     size: "full",
-    aspectRatio: "1:1",
+    aspectRatio: "20:13",
     aspectMode: "cover",
     action: {
       type: "uri",
@@ -134,41 +135,36 @@ function buildPdfBubble(reportId: string): LineFlexBubble {
 
   return {
     type: "bubble",
-    size: "mega",
+    size: "kilo",
     hero: buildHero("pdf", uri),
     body: {
       type: "box",
       layout: "vertical",
-      paddingAll: "22px",
-      spacing: "md",
+      paddingAll: "14px",
+      spacing: "sm",
       contents: [
         {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            {
-              type: "text",
-              text: "RESULT PDF",
-              size: "xs",
-              weight: "bold",
-              color: "#2E6B53"
-            }
-          ]
+          type: "text",
+          text: "RESULT PDF",
+          size: "xxs",
+          weight: "bold",
+          color: "#2E6B53"
         },
         {
           type: "text",
-          text: "診断結果を確認する",
-          size: "xl",
+          text: "診断結果を確認",
+          size: "md",
           weight: "bold",
           color: "#173728",
           wrap: true
         },
         {
           type: "text",
-          text: "認証完了後すぐにPDFを開けます。タップして内容を確認してください。",
-          size: "sm",
+          text: "PDFで内容を確認できます。",
+          size: "xs",
           color: "#5D6B63",
-          wrap: true
+          wrap: true,
+          maxLines: 2
         }
       ]
     },
@@ -176,15 +172,15 @@ function buildPdfBubble(reportId: string): LineFlexBubble {
       type: "box",
       layout: "vertical",
       paddingTop: "0px",
-      paddingBottom: "20px",
-      paddingStart: "22px",
-      paddingEnd: "22px",
+      paddingBottom: "14px",
+      paddingStart: "14px",
+      paddingEnd: "14px",
       contents: [
         {
           type: "button",
           style: "primary",
           color: "#2E6B53",
-          height: "md",
+          height: "sm",
           action: {
             type: "uri",
             label: "PDFを見る",
@@ -205,41 +201,36 @@ function buildPurchaseBubble(reportId: string): LineFlexBubble {
 
   return {
     type: "bubble",
-    size: "mega",
+    size: "kilo",
     hero: buildHero("purchase", uri),
     body: {
       type: "box",
       layout: "vertical",
-      paddingAll: "22px",
-      spacing: "md",
+      paddingAll: "14px",
+      spacing: "sm",
       contents: [
         {
-          type: "box",
-          layout: "baseline",
-          contents: [
-            {
-              type: "text",
-              text: "RECOMMEND",
-              size: "xs",
-              weight: "bold",
-              color: "#8E4D2B"
-            }
-          ]
+          type: "text",
+          text: "RECOMMEND",
+          size: "xxs",
+          weight: "bold",
+          color: "#8E4D2B"
         },
         {
           type: "text",
-          text: "おすすめ商品を確認する",
-          size: "xl",
+          text: "おすすめ商品を確認",
+          size: "md",
           weight: "bold",
           color: "#4D2A18",
           wrap: true
         },
         {
           type: "text",
-          text: "診断結果に合わせた購入導線をすぐ開けます。気になる商品をそのままチェックできます。",
-          size: "sm",
+          text: "商品をそのまま確認できます。",
+          size: "xs",
           color: "#706056",
-          wrap: true
+          wrap: true,
+          maxLines: 2
         }
       ]
     },
@@ -247,15 +238,15 @@ function buildPurchaseBubble(reportId: string): LineFlexBubble {
       type: "box",
       layout: "vertical",
       paddingTop: "0px",
-      paddingBottom: "20px",
-      paddingStart: "22px",
-      paddingEnd: "22px",
+      paddingBottom: "14px",
+      paddingStart: "14px",
+      paddingEnd: "14px",
       contents: [
         {
           type: "button",
           style: "primary",
           color: "#C9703C",
-          height: "md",
+          height: "sm",
           action: {
             type: "uri",
             label: "商品を見る",
