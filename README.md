@@ -139,7 +139,7 @@ npm run dev
 ### 初回セットアップ
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 docker compose build
 docker compose run --rm app npm ci
 ```
@@ -165,7 +165,7 @@ docker compose down
 ### 補足
 - アプリは `http://localhost:3000` で確認できます
 - 開発時の依存関係はコンテナ内の `node_modules` volume を使用します
-- 環境変数は `.env.example` をコピーして `.env` を作成してください
+- 環境変数は `.env.example` をコピーして `.env.local` を作成してください
 
 ## 8. seedデータ投入
 
